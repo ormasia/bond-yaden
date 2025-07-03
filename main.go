@@ -1,12 +1,22 @@
+// 亚丁ATS系统客户端
+// 实现与亚丁ATS（Automated Trading System）系统的连接和通信
+//
+// 主要功能：
+// 1. 用户登录认证（混合加密）
+// 2. WebSocket连接建立
+// 3. STOMP协议通信
+// 4. 实时债券行情数据接收
+//
+// 技术特点：
+// - RSA+AES混合加密通信
+// - WebSocket+STOMP双协议栈
+// - 实时消息推送
+// - 优雅的连接管理
 package main
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -20,9 +30,11 @@ import (
 
 	"github.com/go-stomp/stomp/v3"
 	"github.com/gorilla/websocket"
+
+	"github.com/google/uuid"
 )
 
-// 测试环境配置
+// 亚丁ATS系统测试环境配置
 const (
 	Base_URL   = "https://adenapi.cstm.adenfin.com"
 	WSS_URL    = "wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws"
@@ -33,84 +45,101 @@ const (
 	PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB"
 )
 
-// 登录请求结构
+// LoginRequest 登录请求结构体
 type LoginRequest struct {
-	Username string `json:"username"` // 登录用户名
-	Password string `json:"password"` // 登录密码
-	SmsCode  string `json:"code"`     // 短信验证码
+	Username string `json:"username"`
+	Password string `json:"password"`
+	SmsCode  string `json:"code"`
 }
 
-// 登录响应结构
+// LoginResponse 登录响应结构体
 type LoginResponse struct {
-	Code  int    `json:"code"`
-	Msg   string `json:"msg"`
-	Token string `json:"data"`
+	Code  int    `json:"code"` // 响应状态码，200表示成功
+	Msg   string `json:"msg"`  // 响应消息，成功或错误描述
+	Token string `json:"data"` // 登录成功后返回的访问令牌，用于后续API调用
 }
 
-// 登录加密请求结构，所有请求都是这个格式，Msg中需要有不同的结构
+// EncryptedRequest 加密请求结构体
 type EncryptedRequest struct {
-	ReqMsg   string `json:"reqMsg"`
-	ReqKey   string `json:"reqKey"`
-	ClientId string `json:"clientId"`
+	ReqMsg   string `json:"reqMsg"`   // AES加密后的请求内容（Base64编码）
+	ReqKey   string `json:"reqKey"`   // RSA加密后的AES密钥（Base64编码）
+	ClientId string `json:"clientId"` // 客户端标识符，用于区分不同客户端
 }
 
+// EncryptedNoLoginRequest 无需登录的加密请求结构体
 type EncryptedNoLoginRequest struct {
-	ReqMsg   string `json:"reqMsg"`
-	ReqKey   string `json:"reqKey"`
-	ClientId string `json:"clientId"`
+	ReqMsg   string `json:"reqMsg"`   // AES加密后的请求内容（Base64编码）
+	ReqKey   string `json:"reqKey"`   // RSA加密后的AES密钥（Base64编码）
+	ClientId string `json:"clientId"` // 客户端标识符
 }
 
+// EncryptedResponse 服务器返回的加密响应格式
 type EncryptedResponse struct {
-	ResMsg string `json:"resMsg"`
-	ResKey string `json:"resKey"`
+	ResMsg string `json:"resMsg"` // AES加密后的响应内容（Base64编码）
+	ResKey string `json:"resKey"` // RSA加密后的AES密钥（Base64编码），需要用公钥"解密"
 }
 
+// StompClient STOMP客户端结构体
+// 封装WebSocket连接和STOMP协议连接，用于接收实时消息推送
 type StompClient struct {
-	conn      *websocket.Conn
-	stompConn *stomp.Conn
-	token     string
+	conn      *websocket.Conn // WebSocket底层连接
+	stompConn *stomp.Conn     // STOMP协议连接，基于WebSocket
+	token     string          // 访问令牌，用于身份验证
 }
 
+// 1. 用户登录获取访问令牌
+// 2. 建立WebSocket连接
+// 3. 建立STOMP协议连接
+// 4. 订阅债券行情消息
+// 5. 持续监听消息推送
 func main() {
 	fmt.Println("开始亚丁ATS系统测试...")
 
+	// 创建STOMP客户端实例
 	client := &StompClient{}
+	// 可以手动设置token进行测试（跳过登录步骤）
 	// client.token = "Lh8ksvjj7LAUYjCBUGDSQIVDx8LF707N"
-	// 1. 登录获取token
+
+	// 第一步：用户登录获取访问令牌
+	// 使用加密通信协议，获取后续API调用所需的token
 	fmt.Println("第一步：登录获取Token...")
 	if err := client.login(); err != nil {
 		log.Fatal("登录失败:", err)
 	}
-
 	fmt.Printf("登录成功，获取到Token: %s\n", client.token[:20]+"...")
 
-	// 2. 建立WebSocket连接
+	// 第二步：建立WebSocket连接
+	// 使用获取的token建立安全的WebSocket连接
 	fmt.Println("第二步：建立WebSocket连接...")
 	if err := client.connectWebSocket(); err != nil {
 		log.Fatal("WebSocket连接失败:", err)
 	}
-	defer client.conn.Close()
+	defer client.conn.Close() // 确保程序退出时关闭连接
 
-	// 3. 建立STOMP连接
+	// 第三步：建立STOMP协议连接
+	// 在WebSocket基础上建立STOMP消息协议连接
 	fmt.Println("第三步：建立STOMP连接...")
 	if err := client.connectStomp(); err != nil {
 		log.Fatal("STOMP连接失败:", err)
 	}
-	defer client.stompConn.Disconnect()
+	defer client.stompConn.Disconnect() // 确保程序退出时断开STOMP连接
 
-	// 4. 订阅消息
+	// 第四步：订阅债券行情消息
+	// 订阅指定的消息队列，开始接收实时行情数据
 	fmt.Println("第四步：订阅行情消息...")
 	if err := client.subscribe(); err != nil {
 		log.Fatal("订阅失败:", err)
 	}
 
-	// 等待中断信号
+	// 设置中断信号处理
+	// 监听Ctrl+C信号，优雅退出程序
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
 	fmt.Println("连接成功，等待消息推送...")
 	fmt.Println("按 Ctrl+C 退出")
 
+	// 阻塞等待中断信号
 	<-interrupt
 	fmt.Println("正在断开连接...")
 }
@@ -142,14 +171,18 @@ func (c *StompClient) login() error {
 		return fmt.Errorf("加密请求序列化失败: %v", err)
 	}
 
+	// 构建登录API的完整URL
+	// 路径: /cust-gateway/cust-auth/account/outApi/doLogin
 	LOGIN_URL := fmt.Sprintf("%s%s", Base_URL, "/cust-gateway/cust-auth/account/outApi/doLogin")
 	fmt.Printf("发送登录请求到: %s\n", LOGIN_URL)
 
-	// 创建HTTP客户端
+	// 创建HTTP客户端，配置超时和TLS设置
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 30 * time.Second, // 请求超时时间30秒
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // 忽略证书验证
+			// TLS配置：跳过证书验证（仅用于测试环境）
+			// 生产环境应该移除InsecureSkipVerify或设置为false
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
 
@@ -205,19 +238,6 @@ func (c *StompClient) login() error {
 	return nil
 }
 
-// PKCS5UnPadding removes PKCS5/PKCS7 padding from decrypted data.
-func PKCS5UnPadding(origData []byte) ([]byte, error) {
-	length := len(origData)
-	if length == 0 {
-		return nil, fmt.Errorf("解密数据长度为0")
-	}
-	unpadding := int(origData[length-1])
-	if unpadding > length || unpadding == 0 {
-		return nil, fmt.Errorf("填充长度无效")
-	}
-	return origData[:(length - unpadding)], nil
-}
-
 // 建立WebSocket连接
 func (c *StompClient) connectWebSocket() error {
 	// 构建带token的URL
@@ -228,22 +248,31 @@ func (c *StompClient) connectWebSocket() error {
 
 	// 添加token参数
 	q := u.Query()
-	q.Set("token", c.token)
+	q.Set("token", "Bearer "+c.token)
 	u.RawQuery = q.Encode()
 
 	fmt.Printf("连接地址: %s\n", u.String())
 
-	// 配置WebSocket连接
+	// 配置WebSocket拨号器
 	dialer := websocket.Dialer{
+		// TLS配置：跳过证书验证（测试环境）
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		Subprotocols:    []string{"v12.stomp", "v11.stomp", "v10.stomp"},
+		// 支持的STOMP协议版本，按优先级排序
+		// v12.stomp: STOMP 1.2版本（最新）
+		// v11.stomp: STOMP 1.1版本
+		// v10.stomp: STOMP 1.0版本（向后兼容）
+		Subprotocols: []string{"v12.stomp", "v11.stomp", "v10.stomp"},
 	}
 
-	// 添加请求头
+	// 设置WebSocket连接的HTTP请求头
 	headers := http.Header{}
-	headers.Set("Authorization", "Bearer "+c.token)
+	// 标准的Bearer Token认证头
+	// headers.Set("Authorization", "Bearer "+c.token)
+	// 自定义token头（服务器可能需要）
 	headers.Set("token", c.token)
-	headers.Set("Origin", "https://adenapi.cstm.adenfin.com")
+	// Origin头（如果服务器需要CORS验证可以启用）
+	// headers.Set("Origin", "https://adenapi.cstm.adenfin.com")
+	// 用户代理标识
 	headers.Set("User-Agent", "Go-WebSocket-Client/1.0")
 
 	// 建立连接
@@ -269,16 +298,21 @@ func (c *StompClient) connectWebSocket() error {
 
 // 建立STOMP连接
 func (c *StompClient) connectStomp() error {
-	// 创建STOMP连接选项
+	// 创建STOMP连接选项配置
 	options := []func(*stomp.Conn) error{
+		// 登录凭据（空用户名密码，使用token认证）
 		stomp.ConnOpt.Login("", ""),
+		// 虚拟主机名（STOMP协议要求）
 		stomp.ConnOpt.Host("localhost"),
-		stomp.ConnOpt.HeartBeat(30*time.Second, 10*time.Second),
-		stomp.ConnOpt.Header("token", c.token),
-		stomp.ConnOpt.Header("imei", "test-device-001"),
-		stomp.ConnOpt.Header("appOs", "linux"),
-		stomp.ConnOpt.Header("appVersion", "1.0.0"),
-		stomp.ConnOpt.Header("deviceInfo", "test-client"),
+		// 心跳配置：发送心跳间隔30秒，接收心跳超时10秒
+		// 用于保持连接活跃和检测连接状态
+		stomp.ConnOpt.HeartBeat(10*time.Second, 30*time.Second),
+		// 自定义STOMP头部信息
+		stomp.ConnOpt.Header("token", c.token),            // 访问令牌
+		stomp.ConnOpt.Header("imei", "test-device-001"),   // 设备IMEI标识
+		stomp.ConnOpt.Header("appOs", "windows"),          // 应用运行的操作系统
+		stomp.ConnOpt.Header("appVersion", "1.0.0"),       // 应用版本号
+		stomp.ConnOpt.Header("deviceInfo", "test-client"), // 设备信息描述
 	}
 
 	// 使用WebSocket连接创建STOMP连接
@@ -294,11 +328,27 @@ func (c *StompClient) connectStomp() error {
 
 // 订阅消息
 func (c *StompClient) subscribe() error {
+	// 订阅目标地址：债券行情消息队列
+	// /user/queue/v1/apiatsbondquote/messages
+	// - /user: 用户专用队列前缀
+	// - /queue: 队列类型（点对点消息）
+	// - v1: API版本
+	// - apiatsbondquote: 债券行情API标识
+	// - messages: 消息主题
 	destination := "/user/queue/v1/apiatsbondquote/messages"
 
 	fmt.Printf("订阅主题: %s\n", destination)
 
-	sub, err := c.stompConn.Subscribe(destination, stomp.AckAuto)
+	// 订阅消息，使用自动确认模式
+	// stomp.AckAuto: 消息接收后自动确认，无需手动ACK
+	subcribeId := uuid.New().String()
+	// 订阅消息，并添加自定义消息头
+	sub, err := c.stompConn.Subscribe(
+		destination,
+		stomp.AckAuto,
+		stomp.SubscribeOpt.Header("uuid", subcribeId), // 客户端标识符
+	)
+
 	if err != nil {
 		return fmt.Errorf("订阅失败: %v", err)
 	}
@@ -322,7 +372,7 @@ func (c *StompClient) subscribe() error {
 			fmt.Println("消息内容:")
 
 			// 尝试格式化JSON输出
-			var jsonData interface{}
+			var jsonData any
 			if err := json.Unmarshal(msg.Body, &jsonData); err == nil {
 				formattedJSON, _ := json.MarshalIndent(jsonData, "", "  ")
 				fmt.Println(string(formattedJSON))
@@ -334,30 +384,6 @@ func (c *StompClient) subscribe() error {
 	}()
 
 	return nil
-}
-
-// 加密请求
-func encryptRequest(content string) (*EncryptedRequest, error) {
-	// 生成AES密钥
-	aesKey := generateAESKey()
-
-	// 使用AES加密内容
-	reqMsg, err := aesEncrypt(content, aesKey)
-	if err != nil {
-		return nil, fmt.Errorf("AES加密失败: %v", err)
-	}
-
-	// 使用RSA加密AES密钥
-	reqKey, err := rsaEncrypt(aesKey)
-	if err != nil {
-		return nil, fmt.Errorf("RSA加密失败: %v", err)
-	}
-
-	return &EncryptedRequest{
-		ReqMsg:   reqMsg,
-		ReqKey:   reqKey,
-		ClientId: CLIENT_ID,
-	}, nil
 }
 
 // func encryptNoLoginRequest(content string) (*EncryptedNoLoginRequest, error) {
@@ -382,88 +408,46 @@ func encryptRequest(content string) (*EncryptedRequest, error) {
 // 	}, nil
 // }
 
-// AES加密 - 使用ECB模式和PKCS5Padding
-func aesEncrypt(data string, secretBase64 string) (string, error) {
-	// 解码Base64密钥
-	key, err := base64.StdEncoding.DecodeString(secretBase64)
-	if err != nil {
-		return "", fmt.Errorf("密钥Base64解码失败: %v", err)
-	}
-
-	// 确保输入数据使用UTF-8编码
-	plaintext := []byte(data) // Go字符串默认是UTF-8编码
-
-	// 创建AES加密器
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return "", fmt.Errorf("创建AES加密器失败: %v", err)
-	}
-
-	// PKCS5Padding填充
-	padding := aes.BlockSize - len(plaintext)%aes.BlockSize
-	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	plaintext = append(plaintext, padtext...)
-
-	// ECB模式加密 - 不需要IV
-	ciphertext := make([]byte, len(plaintext))
-	for i := 0; i < len(plaintext); i += aes.BlockSize {
-		block.Encrypt(ciphertext[i:i+aes.BlockSize], plaintext[i:i+aes.BlockSize])
-	}
-
-	// 返回Base64编码的结果
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
-}
-
-// RSA加密 - 加密Base64编码的AES密钥
-func rsaEncrypt(secretBase64 string) (string, error) {
-	// 解析公钥
-	pubKeyBytes, err := base64.StdEncoding.DecodeString(PUBLIC_KEY)
-	if err != nil {
-		return "", fmt.Errorf("公钥Base64解码失败: %v", err)
-	}
-
-	pubKey, err := x509.ParsePKIXPublicKey(pubKeyBytes)
-	if err != nil {
-		return "", fmt.Errorf("公钥解析失败: %v", err)
-	}
-
-	rsaPubKey, ok := pubKey.(*rsa.PublicKey)
-	if !ok {
-		return "", fmt.Errorf("不是有效的RSA公钥")
-	}
-
-	// 将Base64编码的密钥转换为UTF-8字节数组
-	data := []byte(secretBase64)
-
-	// RSA加密 - PKCS1v15填充方式
-	encrypted, err := rsa.EncryptPKCS1v15(rand.Reader, rsaPubKey, data)
-	if err != nil {
-		return "", fmt.Errorf("RSA加密失败: %v", err)
-	}
-
-	// 返回Base64编码的加密结果
-	return base64.StdEncoding.EncodeToString(encrypted), nil
-}
-
-// WebSocket网络连接适配器，用于STOMP库
+// WebSocketNetConn WebSocket网络连接适配器
+// 将WebSocket连接包装成net.Conn接口，供STOMP库使用
+// STOMP库需要net.Conn接口，而WebSocket连接需要适配
 type WebSocketNetConn struct {
-	conn *websocket.Conn
+	conn *websocket.Conn // 底层WebSocket连接
 }
 
+// NewWebSocketNetConn 创建WebSocket网络连接适配器
+// 参数：
+//   - conn: WebSocket连接实例
+//
+// 返回：适配器实例
 func NewWebSocketNetConn(conn *websocket.Conn) *WebSocketNetConn {
 	return &WebSocketNetConn{conn: conn}
 }
 
+// Read 实现net.Conn接口的Read方法
+// 从WebSocket连接读取数据
 func (w *WebSocketNetConn) Read(p []byte) (n int, err error) {
+	// 读取WebSocket消息（忽略消息类型）
 	_, message, err := w.conn.ReadMessage()
-	if err != nil {
-		return 0, err
+	if err == nil && len(message) > 0 {
+		fmt.Println("收到STOMP帧:")
+		fmt.Println(string(message))
+		fmt.Println("----------------------------")
 	}
+	// 将消息内容复制到缓冲区
 	copy(p, message)
 	return len(message), nil
 }
 
+// Write 实现net.Conn接口的Write方法
+// 向WebSocket连接写入数据
 func (w *WebSocketNetConn) Write(p []byte) (n int, err error) {
+	if len(p) > 0 {
+		fmt.Println("发送STOMP帧:")
+		fmt.Println(string(p))
+		fmt.Println("----------------------------")
+	}
+	// 发送文本消息到WebSocket
 	err = w.conn.WriteMessage(websocket.TextMessage, p)
 	if err != nil {
 		return 0, err
@@ -471,21 +455,30 @@ func (w *WebSocketNetConn) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+// Close 实现net.Conn接口的Close方法
+// 关闭WebSocket连接
 func (w *WebSocketNetConn) Close() error {
 	return w.conn.Close()
 }
 
+// SetDeadline 实现net.Conn接口的SetDeadline方法
+// 设置读写超时时间
 func (w *WebSocketNetConn) SetDeadline(t time.Time) error {
+	// 同时设置读和写的超时时间
 	if err := w.conn.SetReadDeadline(t); err != nil {
 		return err
 	}
 	return w.conn.SetWriteDeadline(t)
 }
 
+// SetReadDeadline 实现net.Conn接口的SetReadDeadline方法
+// 设置读取超时时间
 func (w *WebSocketNetConn) SetReadDeadline(t time.Time) error {
 	return w.conn.SetReadDeadline(t)
 }
 
+// SetWriteDeadline 实现net.Conn接口的SetWriteDeadline方法
+// 设置写入超时时间
 func (w *WebSocketNetConn) SetWriteDeadline(t time.Time) error {
 	return w.conn.SetWriteDeadline(t)
 }
