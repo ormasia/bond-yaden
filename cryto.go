@@ -22,10 +22,11 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2
 
 // ─────────────────────────────────────────────────────────────
 // 2) AES-ECB + PKCS5Padding 封装
-func pkcsPad(src []byte, bs int) []byte {
-	pad := bs - len(src)%bs
-	return append(src, bytes.Repeat([]byte{byte(pad)}, pad)...)
-}
+// func pkcsPad(src []byte, bs int) []byte {
+// 	pad := bs - len(src)%bs
+// 	return append(src, bytes.Repeat([]byte{byte(pad)}, pad)...)
+// }
+
 func pkcsUnpad(src []byte) ([]byte, error) {
 	if len(src) == 0 {
 		return nil, errors.New("padding error")
@@ -36,18 +37,19 @@ func pkcsUnpad(src []byte) ([]byte, error) {
 	}
 	return src[:len(src)-pad], nil
 }
-func aesEncryptECB(plain, key []byte) (string, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return "", err
-	}
-	plain = pkcsPad(plain, block.BlockSize())
-	dst := make([]byte, len(plain))
-	for bs, be := 0, block.BlockSize(); bs < len(plain); bs, be = bs+block.BlockSize(), be+block.BlockSize() {
-		block.Encrypt(dst[bs:be], plain[bs:be])
-	}
-	return base64.StdEncoding.EncodeToString(dst), nil
-}
+
+//	func aesEncryptECB(plain, key []byte) (string, error) {
+//		block, err := aes.NewCipher(key)
+//		if err != nil {
+//			return "", err
+//		}
+//		plain = pkcsPad(plain, block.BlockSize())
+//		dst := make([]byte, len(plain))
+//		for bs, be := 0, block.BlockSize(); bs < len(plain); bs, be = bs+block.BlockSize(), be+block.BlockSize() {
+//			block.Encrypt(dst[bs:be], plain[bs:be])
+//		}
+//		return base64.StdEncoding.EncodeToString(dst), nil
+//	}
 func aesDecryptECB(b64 string, key []byte) ([]byte, error) {
 	cipherBytes, _ := base64.StdEncoding.DecodeString(b64)
 	block, err := aes.NewCipher(key)
@@ -67,18 +69,18 @@ func aesDecryptECB(b64 string, key []byte) ([]byte, error) {
 // ─────────────────────────────────────────────────────────────
 // 3) RSA 操作
 // 3-A  公钥加密（客户端发送时用）
-func rsaEncryptWithPub(pubPEM []byte, data []byte) (string, error) {
-	block, _ := pem.Decode(pubPEM)
-	pub, err := x509.ParsePKCS1PublicKey(block.Bytes)
-	if err != nil {
-		return "", err
-	}
-	cipherBytes, err := rsa.EncryptPKCS1v15(rand.Reader, pub, data)
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(cipherBytes), nil
-}
+// func rsaEncryptWithPub(pubPEM []byte, data []byte) (string, error) {
+// 	block, _ := pem.Decode(pubPEM)
+// 	pub, err := x509.ParsePKCS1PublicKey(block.Bytes)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	cipherBytes, err := rsa.EncryptPKCS1v15(rand.Reader, pub, data)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return base64.StdEncoding.EncodeToString(cipherBytes), nil
+// }
 
 // 3-B  公钥“解密”（客户端接收时用：对端已经用私钥加密）
 func rsaDecryptWithPub(pubPEM []byte, cipherB64 string) ([]byte, error) {
@@ -153,46 +155,3 @@ func generateAESKey() string {
 	// 返回Base64编码的密钥
 	return base64.StdEncoding.EncodeToString(key)
 }
-
-// ─────────────────────────────────────────────────────────────
-// 4) 一个完整「发送 → 接收」演示
-// func main() {
-// 	// —— 4.1 发送方：组装请求 ————————————————————————
-// 	requestData := []byte(`{"orderId":123,"amount":456}`)
-// 	// 随机 128-bit AES Key
-// 	aesKey := make([]byte, 16)
-// 	if _, err := rand.Read(aesKey); err != nil {
-// 		panic(err)
-// 	}
-
-// 	reqMsg, _ := aesEncryptECB(requestData, aesKey)              // AES 加密正文
-// 	reqKey, _ := rsaEncryptWithPub([]byte(serverPubPEM), aesKey) // 公钥加密 secret
-
-// 	payload, _ := json.Marshal(map[string]string{
-// 		"reqMsg": reqMsg,
-// 		"reqKey": reqKey,
-// 	})
-// 	fmt.Println("发送 JSON:", string(payload))
-
-// 	// ========== ↓以下仅为模拟服务端/响应流程，实际由接口方完成 ==========
-// 	// （用随机私钥模拟 “私钥加密” secret）
-// 	priv, _ := rsa.GenerateKey(rand.Reader, 1024)
-// 	digest := aesKey
-// 	// 服务端私钥“加密”得到 respKey
-// 	respSign, err := rsa.SignPKCS1v15(rand.Reader, priv, 0, digest)
-// 	if err != nil {
-// 		log.Fatal("sign err:", err)
-// 	}
-// 	respKey := base64.StdEncoding.EncodeToString(respSign)
-// 	// 再用同一个 aesKey 把响应正文加密
-// 	respMsg, _ := aesEncryptECB([]byte(`{"code":0,"msg":"ok"}`), aesKey)
-
-// 	// —— 4.2 客户端：解密响应 ————————————————————————
-// 	gotKey, err := rsaDecryptWithPub(pem.EncodeToMemory(
-// 		&pem.Block{Type: "RSA PUBLIC KEY", Bytes: x509.MarshalPKCS1PublicKey(&priv.PublicKey)}), respKey)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	plain, _ := aesDecryptECB(respMsg, gotKey)
-// 	fmt.Println("解密后响应:", string(plain))
-// }

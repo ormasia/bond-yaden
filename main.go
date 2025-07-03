@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -11,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -75,7 +75,7 @@ func main() {
 	fmt.Println("开始亚丁ATS系统测试...")
 
 	client := &StompClient{}
-
+	// client.token = "Lh8ksvjj7LAUYjCBUGDSQIVDx8LF707N"
 	// 1. 登录获取token
 	fmt.Println("第一步：登录获取Token...")
 	if err := client.login(); err != nil {
@@ -117,73 +117,68 @@ func main() {
 
 // 登录获取Token
 func (c *StompClient) login() error {
-	// // 构建登录请求
-	// loginReq := LoginRequest{
-	// 	Username: USERNAME,
-	// 	Password: PASSWORD,
-	// 	SmsCode:  SMS_CODE,
-	// }
-
-	// // 转换为JSON
-	// jsonData, err := json.Marshal(loginReq) // 序列化
-	// if err != nil {
-	// 	return fmt.Errorf("JSON序列化失败: %v", err)
-	// }
-
-	// // 加密请求，
-	// encryptedReq, err := encryptRequest(string(jsonData)) // *EncryptedRequest
-	// if err != nil {
-	// 	return fmt.Errorf("请求加密失败: %v", err)
-	// }
-
-	// // 发送HTTP请求
-	// reqBody, err := json.Marshal(encryptedReq)
-	// if err != nil {
-	// 	return fmt.Errorf("加密请求序列化失败: %v", err)
-	// }
-
-	// LOGIN_URL := fmt.Sprintf("%s%s", Base_URL, "/cust-gateway/cust-auth/account/outApi/doLogin")
-	// fmt.Printf("发送登录请求到: %s\n", LOGIN_URL)
-
-	// // 创建HTTP客户端
-	// client := &http.Client{
-	// 	Timeout: 30 * time.Second,
-	// 	Transport: &http.Transport{
-	// 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // 忽略证书验证
-	// 	},
-	// }
-
-	// resp, err := client.Post(LOGIN_URL, "application/json", bytes.NewBuffer(reqBody)) //
-	// if err != nil {
-	// 	return fmt.Errorf("HTTP请求失败: %v", err)
-	// }
-	// defer resp.Body.Close()
-
-	// // 读取响应
-	// respBody, err := io.ReadAll(resp.Body)
-	// if err != nil {
-	// 	return fmt.Errorf("读取响应失败: %v", err)
-	// }
-
-	// fmt.Printf("响应状态: %s\n", resp.Status)
-	// fmt.Printf("响应内容: %s\n", string(respBody))
-
-	// var encryptedResp EncryptedResponse
-	// json.Unmarshal(respBody, &encryptedResp)
-	// fmt.Printf("encryptedResp反序列化后:%s", encryptedResp)
-
-	encryptedResp := EncryptedResponse{
-		ResMsg: "Y21/VyeVlXXPumJW2NWv6h3ZG93DTAd3NC+H3YbDYoTZ0hIAl+6U35kGf9dH0+BVz0kkf+NNPn8eWdkf5olB2uEpBXwj82EZyElNAtxMy+g=",
-		ResKey: "C1FjcyhxYsK8e5PhtZpfPV/OdZe5GGmSJ1BcAtxp6WMcQMYB44sY5i3jcY6CGyRVbyinvLrldhScIyC06tUPiARexGHrHHT0AppJWAEjy6gXtyRbz44Gk0dMSBL3fmtzpNmYX6sFsAouhrPi7zN5KSoL/fco0eBDCObcmKal/9I=",
+	// 构建登录请求
+	loginReq := LoginRequest{
+		Username: USERNAME,
+		Password: PASSWORD,
+		SmsCode:  SMS_CODE,
 	}
-	// 解密响应
-	aesKey, err := rsaDecryptWithPub([]byte(ServerPubPEM), encryptedResp.ResKey)
+
+	// 转换为JSON
+	jsonData, err := json.Marshal(loginReq) // 序列化
+	if err != nil {
+		return fmt.Errorf("JSON序列化失败: %v", err)
+	}
+
+	// 加密请求，
+	encryptedReq, err := encryptRequest(string(jsonData)) // *EncryptedRequest
+	if err != nil {
+		return fmt.Errorf("请求加密失败: %v", err)
+	}
+
+	// 发送HTTP请求
+	reqBody, err := json.Marshal(encryptedReq)
+	if err != nil {
+		return fmt.Errorf("加密请求序列化失败: %v", err)
+	}
+
+	LOGIN_URL := fmt.Sprintf("%s%s", Base_URL, "/cust-gateway/cust-auth/account/outApi/doLogin")
+	fmt.Printf("发送登录请求到: %s\n", LOGIN_URL)
+
+	// 创建HTTP客户端
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // 忽略证书验证
+		},
+	}
+
+	resp, err := client.Post(LOGIN_URL, "application/json", bytes.NewBuffer(reqBody)) //
+	if err != nil {
+		return fmt.Errorf("HTTP请求失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// 读取响应
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("读取响应失败: %v", err)
+	}
+
+	fmt.Printf("响应状态: %s\n", resp.Status)
+	fmt.Printf("响应内容: %s\n", string(respBody))
+
+	var encryptedResp EncryptedResponse
+	json.Unmarshal(respBody, &encryptedResp)
+
+	pubKeyBytes, err := base64.StdEncoding.DecodeString(PUBLIC_KEY)
+	if err != nil {
+		return fmt.Errorf("公钥Base64解码失败: %v", err)
+	}
+	aesKey, err := rsaDecryptWithPub(pubKeyBytes, encryptedResp.ResKey)
 	if err != nil {
 		return fmt.Errorf("RSA解密AES密钥失败: %v", err)
 	}
-	fmt.Printf("RSA解密后的aesKey长度: %d\n", len(aesKey))
-	fmt.Printf("RSA解密后的aesKey内容: %x\n", aesKey)
-	fmt.Printf("RSA解密后的aesKey字符串: %s\n", string(aesKey))
 
 	aesKeyBase64 := string(aesKey)                                   // 转为字符串
 	realAESKey, err := base64.StdEncoding.DecodeString(aesKeyBase64) // Base64解码
@@ -194,7 +189,7 @@ func (c *StompClient) login() error {
 	if err != nil {
 		return fmt.Errorf("AES解密响应失败: %v", err)
 	}
-	fmt.Printf("decryptedResp:%s", decryptedResp)
+	fmt.Printf("响应状态:%s", decryptedResp)
 
 	// 解析响应
 	var loginResp LoginResponse
@@ -208,39 +203,6 @@ func (c *StompClient) login() error {
 
 	c.token = loginResp.Token
 	return nil
-}
-
-func aesDecrypt(s, aesKey string) (any, error) {
-	// 解码Base64加密数据
-	encryptedBytes, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return "", fmt.Errorf("AES密文Base64解码失败: %v", err)
-	}
-
-	// 解析AES密钥
-	aesKeyBytes, err := base64.StdEncoding.DecodeString(aesKey)
-	if err != nil {
-		return "", fmt.Errorf("AES密钥Base64解码失败: %v", err)
-	}
-
-	// AES解密
-	block, err := aes.NewCipher(aesKeyBytes)
-	if err != nil {
-		return "", fmt.Errorf("AES密钥解析失败: %v", err)
-	}
-
-	// 使用CBC解密
-	blockMode := cipher.NewCBCDecrypter(block, aesKeyBytes[:block.BlockSize()])
-	decrypted := make([]byte, len(encryptedBytes))
-	blockMode.CryptBlocks(decrypted, encryptedBytes)
-
-	// 去除PKCS7填充
-	unpadded, err := PKCS5UnPadding(decrypted)
-	if err != nil {
-		return "", fmt.Errorf("PKCS5UnPadding失败: %v", err)
-	}
-
-	return string(unpadded), nil
 }
 
 // PKCS5UnPadding removes PKCS5/PKCS7 padding from decrypted data.
@@ -274,14 +236,28 @@ func (c *StompClient) connectWebSocket() error {
 	// 配置WebSocket连接
 	dialer := websocket.Dialer{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		Subprotocols:    []string{"v10.stomp", "v11.stomp"},
+		Subprotocols:    []string{"v12.stomp", "v11.stomp", "v10.stomp"},
 	}
 
+	// 添加请求头
+	headers := http.Header{}
+	headers.Set("Authorization", "Bearer "+c.token)
+	headers.Set("token", c.token)
+	headers.Set("Origin", "https://adenapi.cstm.adenfin.com")
+	headers.Set("User-Agent", "Go-WebSocket-Client/1.0")
+
 	// 建立连接
-	conn, resp, err := dialer.Dial(u.String(), http.Header{})
+	conn, resp, err := dialer.Dial(u.String(), headers)
+	// conn, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		if resp != nil {
 			fmt.Printf("HTTP响应状态: %s\n", resp.Status)
+			// 打印更多响应信息
+			fmt.Printf("响应头: %v\n", resp.Header)
+			if resp.Body != nil {
+				body, _ := io.ReadAll(resp.Body)
+				fmt.Printf("响应内容: %s\n", string(body))
+			}
 		}
 		return fmt.Errorf("WebSocket连接失败: %v", err)
 	}
@@ -384,27 +360,27 @@ func encryptRequest(content string) (*EncryptedRequest, error) {
 	}, nil
 }
 
-func encryptNoLoginRequest(content string) (*EncryptedNoLoginRequest, error) {
-	// 生成AES密钥
-	aesKey := generateAESKey()
+// func encryptNoLoginRequest(content string) (*EncryptedNoLoginRequest, error) {
+// 	// 生成AES密钥
+// 	aesKey := generateAESKey()
 
-	// 使用AES加密内容
-	reqMsg, err := aesEncrypt(content, aesKey)
-	if err != nil {
-		return nil, fmt.Errorf("AES加密失败: %v", err)
-	}
+// 	// 使用AES加密内容
+// 	reqMsg, err := aesEncrypt(content, aesKey)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("AES加密失败: %v", err)
+// 	}
 
-	// 使用RSA加密AES密钥
-	reqKey, err := rsaEncrypt(aesKey)
-	if err != nil {
-		return nil, fmt.Errorf("RSA加密失败: %v", err)
-	}
+// 	// 使用RSA加密AES密钥
+// 	reqKey, err := rsaEncrypt(aesKey)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("RSA加密失败: %v", err)
+// 	}
 
-	return &EncryptedNoLoginRequest{
-		ReqMsg: reqMsg,
-		ReqKey: reqKey,
-	}, nil
-}
+// 	return &EncryptedNoLoginRequest{
+// 		ReqMsg: reqMsg,
+// 		ReqKey: reqKey,
+// 	}, nil
+// }
 
 // AES加密 - 使用ECB模式和PKCS5Padding
 func aesEncrypt(data string, secretBase64 string) (string, error) {
@@ -468,35 +444,6 @@ func rsaEncrypt(secretBase64 string) (string, error) {
 	// 返回Base64编码的加密结果
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
-
-// // RSA解密 - 解密Base64编码的AES密钥
-// func rsaDecrypt(encryptedBase64 string) (string, error) {
-// 	// 解码Base64加密数据
-// 	encryptedBytes, err := base64.StdEncoding.DecodeString(encryptedBase64)
-// 	if err != nil {
-// 		return "", fmt.Errorf("加密数据Base64解码失败: %v", err)
-// 	}
-
-// 	// 解析公钥
-// 	pubKeyBytes, err := base64.StdEncoding.DecodeString(PUBLIC_KEY)
-// 	if err != nil {
-// 		return "", fmt.Errorf("公钥Base64解码失败: %v", err)
-// 	}
-
-// 	pubKey, err := x509.ParsePKCS1PublicKey(pubKeyBytes)
-// 	if err != nil {
-// 		return "", fmt.Errorf("私钥解析失败: %v", err)
-// 	}
-
-// 	// RSA解密 - PKCS1v15填充方式
-// 	decrypted, err := rsa.DecryptPKCS1v15(rand.Reader, pubKey, encryptedBytes)
-// 	if err != nil {
-// 		return "", fmt.Errorf("RSA解密失败: %v", err)
-// 	}
-
-// 	// 返回解密后的AES密钥
-// 	return string(decrypted), nil
-// }
 
 // WebSocket网络连接适配器，用于STOMP库
 type WebSocketNetConn struct {
