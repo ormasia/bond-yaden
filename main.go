@@ -306,7 +306,7 @@ func (c *StompClient) connectStomp() error {
 		stomp.ConnOpt.Host("localhost"),
 		// 心跳配置：发送心跳间隔30秒，接收心跳超时10秒
 		// 用于保持连接活跃和检测连接状态
-		stomp.ConnOpt.HeartBeat(10*time.Second, 30*time.Second),
+		stomp.ConnOpt.HeartBeat(10*time.Second, 50*time.Second),
 		// 自定义STOMP头部信息
 		stomp.ConnOpt.Header("token", c.token),            // 访问令牌
 		stomp.ConnOpt.Header("imei", "test-device-001"),   // 设备IMEI标识
@@ -346,7 +346,9 @@ func (c *StompClient) subscribe() error {
 	sub, err := c.stompConn.Subscribe(
 		destination,
 		stomp.AckAuto,
-		stomp.SubscribeOpt.Header("uuid", subcribeId), // 客户端标识符
+		stomp.SubscribeOpt.Header("uuid", subcribeId),               // 客户端标识符
+		stomp.SubscribeOpt.Header("id", subcribeId),                 // 客户端标识符
+		stomp.SubscribeOpt.Header("receipt", "receipt-"+subcribeId), // 请求回执
 	)
 
 	if err != nil {
