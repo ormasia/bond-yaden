@@ -113,7 +113,7 @@ func (s *BondQuoteService) processQuoteDetail(tx *gorm.DB, message BondQuoteMess
 		MessageID:        message.Data.MessageID,
 		MessageType:      message.Data.MessageType,
 		Timestamp:        message.Data.Timestamp,
-		SecurityCode:     securityID,
+		ISIN:             securityID,
 		BrokerID:         quote.BrokerID,
 		Side:             quote.Side,
 		Price:            quote.Price,
@@ -160,7 +160,7 @@ func (s *BondQuoteService) updateLatestQuote(tx *gorm.DB, message BondQuoteMessa
 
 	// 准备更新数据
 	latestQuote := model.BondLatestQuote{
-		SecurityCode:   securityID,
+		ISIN:           securityID,
 		LastUpdateTime: time.Now(),
 	}
 

@@ -10,7 +10,7 @@ type BondQuoteDetail struct {
 	MessageID        string     `gorm:"column:message_id;not null;index" json:"messageId"`                       // 消息ID
 	MessageType      string     `gorm:"column:message_type;not null" json:"messageType"`                         // 消息类型
 	Timestamp        int64      `gorm:"column:timestamp;not null" json:"timestamp"`                              // 时间戳
-	SecurityCode     string     `gorm:"column:security_code;not null;index" json:"securityCode"`                 // 债券代码
+	ISIN             string     `gorm:"column:isin;not null;index" json:"securityCode"`                          // 债券代码
 	BrokerID         string     `gorm:"column:broker_id;not null" json:"brokerId"`                               // 券商ID
 	Side             string     `gorm:"column:side;not null" json:"side"`                                        // 方向(BID/ASK)
 	Price            float64    `gorm:"column:price;not null;type:decimal(18,6)" json:"price"`                   // 报价
@@ -33,7 +33,7 @@ func (BondQuoteDetail) TableName() string {
 
 // BondLatestQuote 债券最新行情表
 type BondLatestQuote struct {
-	SecurityCode   string     `gorm:"column:security_code;primaryKey" json:"securityCode"`                                                 // 债券代码
+	ISIN           string     `gorm:"column:isin;primaryKey" json:"securityCode"`                                                          // 债券代码
 	LastUpdateTime time.Time  `gorm:"column:last_update_time;not null" json:"lastUpdateTime"`                                              // 最后更新时间
 	BidPrice       *float64   `gorm:"column:bid_price;type:decimal(18,6)" json:"bidPrice"`                                                 // 最优买入价
 	BidYield       *float64   `gorm:"column:bid_yield;type:decimal(18,6)" json:"bidYield"`                                                 // 买入收益率

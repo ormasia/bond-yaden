@@ -4,7 +4,7 @@ CREATE TABLE t_bond_quote_detail (
   message_id VARCHAR(64) NOT NULL COMMENT '消息ID',
   message_type VARCHAR(32) NOT NULL COMMENT '消息类型',
   timestamp BIGINT NOT NULL COMMENT '时间戳',
-  security_code VARCHAR(32) NOT NULL COMMENT '债券代码',
+  isin VARCHAR(32) NOT NULL COMMENT '债券代码',
   broker_id VARCHAR(32) NOT NULL COMMENT '券商ID',
   side VARCHAR(8) NOT NULL COMMENT '方向(BID/ASK)',
   price DECIMAL(18,6) NOT NULL COMMENT '报价',
@@ -25,7 +25,7 @@ CREATE TABLE t_bond_quote_detail (
 
 -- 债券最新行情表（仅记录每支债券最新行情）
 CREATE TABLE t_bond_latest_quote (
-  security_code VARCHAR(32) PRIMARY KEY COMMENT '债券代码',
+  isin VARCHAR(32) PRIMARY KEY COMMENT '债券代码',
   last_update_time DATETIME NOT NULL COMMENT '最后更新时间',
   bid_price DECIMAL(18,6) COMMENT '最优买入价',
   bid_yield DECIMAL(18,6) COMMENT '买入收益率',
