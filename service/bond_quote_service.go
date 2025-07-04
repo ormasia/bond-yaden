@@ -22,16 +22,18 @@ func NewBondQuoteService(db *gorm.DB) *BondQuoteService {
 
 // 响应消息结构体
 type BondQuoteMessage struct {
-	Data struct {
-		Data         string `json:"data"` // 注意：这是JSON字符串，需要二次解析
-		MessageID    string `json:"messageId"`
-		MessageType  string `json:"messageType"`
-		Organization string `json:"organization"`
-		ReceiverID   string `json:"receiverId"`
-		Timestamp    int64  `json:"timestamp"`
-	} `json:"data"`
-	SendTime      int64  `json:"sendTime"`
-	WsMessageType string `json:"wsMessageType"`
+	Data          BondQuoteData `json:"data"`
+	SendTime      int64         `json:"sendTime"`
+	WsMessageType string        `json:"wsMessageType"`
+}
+
+type BondQuoteData struct {
+	Data         string `json:"data"` // 内部JSON字符串
+	MessageID    string `json:"messageId"`
+	MessageType  string `json:"messageType"`
+	Organization string `json:"organization"`
+	ReceiverID   string `json:"receiverId"`
+	Timestamp    int64  `json:"timestamp"`
 }
 
 // 报价数据结构体 - 用于解析内部JSON字符串

@@ -304,9 +304,9 @@ func (c *StompClient) connectStomp() error {
 		stomp.ConnOpt.Login("", ""),
 		// 虚拟主机名（STOMP协议要求）
 		stomp.ConnOpt.Host("localhost"),
-		// 心跳配置：发送心跳间隔30秒，接收心跳超时6000秒
+		// 心跳配置：发送心跳间隔30秒，接收心跳超时120秒
 		// 用于保持连接活跃和检测连接状态
-		stomp.ConnOpt.HeartBeat(30*time.Second, 6000*time.Second),
+		stomp.ConnOpt.HeartBeat(30*time.Second, 120*time.Second),
 		// 自定义STOMP头部信息
 		stomp.ConnOpt.Header("token", c.token),            // 访问令牌
 		stomp.ConnOpt.Header("imei", "test-device-001"),   // 设备IMEI标识
