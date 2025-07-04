@@ -1,0 +1,1179 @@
+Starting: D:\Users\jingbo.yang\go\bin\dlv.exe dap --listen=127.0.0.1:60479 from d:\Users\jingbo.yang\Desktop\projectCode\bond-yaden
+DAP server listening at: 127.0.0.1:60479
+Type 'dlv help' for list of commands.
+开始亚丁ATS系统测试...
+第一步：登录获取Token...
+发送登录请求到: https://adenapi.cstm.adenfin.com/cust-gateway/cust-auth/account/outApi/doLogin
+响应状态: 200 OK
+响应内容: {"resMsg":"hwzOQ+kB/FM6SrN0kswtgRfSL0DOHHyD9cYVt9OqHulRYCnhfvn1V+FDeK510bsGw/YTXK5PY/NlwYtrTG4S+IcI6zK/5qEHo7b2duD8YvQ=","resKey":"PWDWDEvZOD+pVtlWIIxKejoY3IA9SvBmx/2Yz4EMWWhp8d4ucqQunsQQRF82lmshRDmb/NljhkrTQlAcGYyFx8845g9hDPQ8gN8ja1iJhCgwiZOmJ6ZqrYl4qtpjG0UmNeXK/xPQkWNedQccM8XqpTkiqonS3hrI2ShRx/x/YPM="}
+响应状态:{"msg":"登录成功","code":200,"data":"caR5Bmwinra02RDX7cLPv7SSTqOD5njZ"}登录成功，获取到Token: caR5Bmwinra02RDX7cLP...
+第二步：建立WebSocket连接...
+连接地址: wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws?token=Bearer+caR5Bmwinra02RDX7cLPv7SSTqOD5njZ
+WebSocket连接成功!
+第三步：建立STOMP连接...
+[13:25:28.420] 发送STOMP帧:
+CONNECT
+host:localhost
+heart-beat:20000,120000
+accept-version:1.0,1.1,1.2
+token:caR5Bmwinra02RDX7cLPv7SSTqOD5njZ
+imei:test-device-001
+appOs:windows
+appVersion:1.0.0
+deviceInfo:test-client
+
+[13:32:20.033] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-10
+content-length:590
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007143644266496\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":10000000,\"price\":80.880535,\"quoteOrderNo\":\"D1KNEQRXUNB003EKWSJ0\",\"quoteTime\":1751607138200,\"securityId\":\"CND100059LR4\",\"settleType\":\"T10\",\"side\":\"BID\",\"yield\":18.882258}],\"securityId\":\"CND100059LR4\"}","messageId":"D1KNEQRXUNB003EKWSJ0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"CND100059LR4","timestamp":1751607139990},"sendTime":1751607140004,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:20
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-10
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007143644266496\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":10000000,\"price\":80.880535,\"quoteOrderNo\":\"D1KNEQRXUNB003EKWSJ0\",\"quoteTime\":1751607138200,\"securityId\":\"CND100059LR4\",\"settleType\":\"T10\",\"side\":\"BID\",\"yield\":18.882258}],\"securityId\":\"CND100059LR4\"}",
+    "messageId": "D1KNEQRXUNB003EKWSJ0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "CND100059LR4",
+    "timestamp": 1751607139990
+  },
+  "sendTime": 1751607140004,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:20.263] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-13
+content-length:895
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007144625733632\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":10000000,\"price\":81.279615,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSJG\",\"quoteTime\":1751607138575,\"securityId\":\"CND100059LR4\",\"settleType\":\"T10\",\"side\":\"ASK\",\"yield\":18.457421}],\"bidPrices\":[{\"brokerId\":\"1941007144621539328\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":10000000,\"price\":80.880535,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSJG\",\"quoteTime\":1751607138200,\"securityId\":\"CND100059LR4\",\"settleType\":\"T10\",\"side\":\"BID\",\"yield\":18.882258}],\"securityId\":\"CND100059LR4\"}","messageId":"D1KNER1XUNB003EKWSJG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"CND100059LR4","timestamp":1751607140174},"sendTime":1751607140189,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:20
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-13
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007144625733632\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":10000000,\"price\":81.279615,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSJG\",\"quoteTime\":1751607138575,\"securityId\":\"CND100059LR4\",\"settleType\":\"T10\",\"side\":\"ASK\",\"yield\":18.457421}],\"bidPrices\":[{\"brokerId\":\"1941007144621539328\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":10000000,\"price\":80.880535,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSJG\",\"quoteTime\":1751607138200,\"securityId\":\"CND100059LR4\",\"settleType\":\"T10\",\"side\":\"BID\",\"yield\":18.882258}],\"securityId\":\"CND100059LR4\"}",
+    "messageId": "D1KNER1XUNB003EKWSJG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "CND100059LR4",
+    "timestamp": 1751607140174
+  },
+  "sendTime": 1751607140189,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:20.387] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-16
+content-length:588
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007145556869120\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":14000000,\"price\":90.356894,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSK0\",\"quoteTime\":1751607138790,\"securityId\":\"HK0000108958\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":9.764276}],\"securityId\":\"HK0000108958\"}","messageId":"D1KNER1XUNB003EKWSK0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000108958","timestamp":1751607140353},"sendTime":1751607140357,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:20
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-16
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007145556869120\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":14000000,\"price\":90.356894,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSK0\",\"quoteTime\":1751607138790,\"securityId\":\"HK0000108958\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":9.764276}],\"securityId\":\"HK0000108958\"}",
+    "messageId": "D1KNER1XUNB003EKWSK0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000108958",
+    "timestamp": 1751607140353
+  },
+  "sendTime": 1751607140357,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:20.525] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-17
+content-length:891
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007146139877377\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":14000000,\"price\":91.356894,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSKG\",\"quoteTime\":1751607138931,\"securityId\":\"HK0000108958\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":9.112088}],\"bidPrices\":[{\"brokerId\":\"1941007146139877376\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":14000000,\"price\":90.356894,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSKG\",\"quoteTime\":1751607138790,\"securityId\":\"HK0000108958\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":9.764276}],\"securityId\":\"HK0000108958\"}","messageId":"D1KNER1XUNB003EKWSKG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000108958","timestamp":1751607140490},"sendTime":1751607140494,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:20
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-17
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007146139877377\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":14000000,\"price\":91.356894,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSKG\",\"quoteTime\":1751607138931,\"securityId\":\"HK0000108958\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":9.112088}],\"bidPrices\":[{\"brokerId\":\"1941007146139877376\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":14000000,\"price\":90.356894,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSKG\",\"quoteTime\":1751607138790,\"securityId\":\"HK0000108958\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":9.764276}],\"securityId\":\"HK0000108958\"}",
+    "messageId": "D1KNER1XUNB003EKWSKG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000108958",
+    "timestamp": 1751607140490
+  },
+  "sendTime": 1751607140494,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:20.706] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-18
+content-length:589
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007146840326144\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":1000000,\"price\":97.398675,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSL0\",\"quoteTime\":1751607139115,\"securityId\":\"HK0000082757\",\"settleType\":\"T1\",\"side\":\"BID\",\"yield\":103.274561}],\"securityId\":\"HK0000082757\"}","messageId":"D1KNER1XUNB003EKWSL0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000082757","timestamp":1751607140668},"sendTime":1751607140672,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:20
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-18
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007146840326144\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":1000000,\"price\":97.398675,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSL0\",\"quoteTime\":1751607139115,\"securityId\":\"HK0000082757\",\"settleType\":\"T1\",\"side\":\"BID\",\"yield\":103.274561}],\"securityId\":\"HK0000082757\"}",
+    "messageId": "D1KNER1XUNB003EKWSL0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000082757",
+    "timestamp": 1751607140668
+  },
+  "sendTime": 1751607140672,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:20.850] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-21
+content-length:893
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007147435917312\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":1000000,\"price\":101.990970,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSLG\",\"quoteTime\":1751607139256,\"securityId\":\"HK0000082757\",\"settleType\":\"T1\",\"side\":\"ASK\",\"yield\":95.503596}],\"bidPrices\":[{\"brokerId\":\"1941007147431723008\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":1000000,\"price\":97.398675,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSLG\",\"quoteTime\":1751607139115,\"securityId\":\"HK0000082757\",\"settleType\":\"T1\",\"side\":\"BID\",\"yield\":103.274561}],\"securityId\":\"HK0000082757\"}","messageId":"D1KNER1XUNB003EKWSLG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000082757","timestamp":1751607140813},"sendTime":1751607140817,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:20
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-21
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007147435917312\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":1000000,\"price\":101.990970,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSLG\",\"quoteTime\":1751607139256,\"securityId\":\"HK0000082757\",\"settleType\":\"T1\",\"side\":\"ASK\",\"yield\":95.503596}],\"bidPrices\":[{\"brokerId\":\"1941007147431723008\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":1000000,\"price\":97.398675,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSLG\",\"quoteTime\":1751607139115,\"securityId\":\"HK0000082757\",\"settleType\":\"T1\",\"side\":\"BID\",\"yield\":103.274561}],\"securityId\":\"HK0000082757\"}",
+    "messageId": "D1KNER1XUNB003EKWSLG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000082757",
+    "timestamp": 1751607140813
+  },
+  "sendTime": 1751607140817,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:21.024] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-24
+content-length:587
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007148052480000\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":2000000,\"price\":99.349650,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSM0\",\"quoteTime\":1751607139401,\"securityId\":\"HK0001065173\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":7.182101}],\"securityId\":\"HK0001065173\"}","messageId":"D1KNER1XUNB003EKWSM0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0001065173","timestamp":1751607140994},"sendTime":1751607141000,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:21
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-24
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007148052480000\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":2000000,\"price\":99.349650,\"quoteOrderNo\":\"D1KNER1XUNB003EKWSM0\",\"quoteTime\":1751607139401,\"securityId\":\"HK0001065173\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":7.182101}],\"securityId\":\"HK0001065173\"}",
+    "messageId": "D1KNER1XUNB003EKWSM0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0001065173",
+    "timestamp": 1751607140994
+  },
+  "sendTime": 1751607141000,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:21.145] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-25
+content-length:890
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007148748734465\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":2000000,\"price\":100.029990,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSMG\",\"quoteTime\":1751607139567,\"securityId\":\"HK0001065173\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":6.860675}],\"bidPrices\":[{\"brokerId\":\"1941007148748734464\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":2000000,\"price\":99.349650,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSMG\",\"quoteTime\":1751607139401,\"securityId\":\"HK0001065173\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":7.182101}],\"securityId\":\"HK0001065173\"}","messageId":"D1KNER9XUNB003EKWSMG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0001065173","timestamp":1751607141110},"sendTime":1751607141115,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:21
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-25
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007148748734465\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":2000000,\"price\":100.029990,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSMG\",\"quoteTime\":1751607139567,\"securityId\":\"HK0001065173\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":6.860675}],\"bidPrices\":[{\"brokerId\":\"1941007148748734464\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":2000000,\"price\":99.349650,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSMG\",\"quoteTime\":1751607139401,\"securityId\":\"HK0001065173\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":7.182101}],\"securityId\":\"HK0001065173\"}",
+    "messageId": "D1KNER9XUNB003EKWSMG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0001065173",
+    "timestamp": 1751607141110
+  },
+  "sendTime": 1751607141115,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:21.323] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-28
+content-length:587
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007149419823104\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":3000000,\"price\":91.204375,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSN0\",\"quoteTime\":1751607139725,\"securityId\":\"CND10006G534\",\"settleType\":\"T3\",\"side\":\"BID\",\"yield\":4.346849}],\"securityId\":\"CND10006G534\"}","messageId":"D1KNER9XUNB003EKWSN0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"CND10006G534","timestamp":1751607141288},"sendTime":1751607141295,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:21
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-28
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007149419823104\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":3000000,\"price\":91.204375,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSN0\",\"quoteTime\":1751607139725,\"securityId\":\"CND10006G534\",\"settleType\":\"T3\",\"side\":\"BID\",\"yield\":4.346849}],\"securityId\":\"CND10006G534\"}",
+    "messageId": "D1KNER9XUNB003EKWSN0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "CND10006G534",
+    "timestamp": 1751607141288
+  },
+  "sendTime": 1751607141295,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:21.461] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-31
+content-length:889
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007149965082625\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":3000000,\"price\":91.205000,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSNG\",\"quoteTime\":1751607139859,\"securityId\":\"CND10006G534\",\"settleType\":\"T3\",\"side\":\"ASK\",\"yield\":4.346748}],\"bidPrices\":[{\"brokerId\":\"1941007149965082624\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":3000000,\"price\":91.204375,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSNG\",\"quoteTime\":1751607139725,\"securityId\":\"CND10006G534\",\"settleType\":\"T3\",\"side\":\"BID\",\"yield\":4.346849}],\"securityId\":\"CND10006G534\"}","messageId":"D1KNER9XUNB003EKWSNG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"CND10006G534","timestamp":1751607141425},"sendTime":1751607141429,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:21
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-31
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007149965082625\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":3000000,\"price\":91.205000,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSNG\",\"quoteTime\":1751607139859,\"securityId\":\"CND10006G534\",\"settleType\":\"T3\",\"side\":\"ASK\",\"yield\":4.346748}],\"bidPrices\":[{\"brokerId\":\"1941007149965082624\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":3000000,\"price\":91.204375,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSNG\",\"quoteTime\":1751607139725,\"securityId\":\"CND10006G534\",\"settleType\":\"T3\",\"side\":\"BID\",\"yield\":4.346849}],\"securityId\":\"CND10006G534\"}",
+    "messageId": "D1KNER9XUNB003EKWSNG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "CND10006G534",
+    "timestamp": 1751607141425
+  },
+  "sendTime": 1751607141429,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:21.617] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-32
+content-length:587
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007150619394048\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":4000000,\"price\":93.953000,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSP0\",\"quoteTime\":1751607140012,\"securityId\":\"CND10006JM71\",\"settleType\":\"T4\",\"side\":\"BID\",\"yield\":4.789339}],\"securityId\":\"CND10006JM71\"}","messageId":"D1KNER9XUNB003EKWSP0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"CND10006JM71","timestamp":1751607141586},"sendTime":1751607141590,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:21
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-32
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007150619394048\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":4000000,\"price\":93.953000,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSP0\",\"quoteTime\":1751607140012,\"securityId\":\"CND10006JM71\",\"settleType\":\"T4\",\"side\":\"BID\",\"yield\":4.789339}],\"securityId\":\"CND10006JM71\"}",
+    "messageId": "D1KNER9XUNB003EKWSP0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "CND10006JM71",
+    "timestamp": 1751607141586
+  },
+  "sendTime": 1751607141590,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:21.757] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-37
+content-length:889
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007151231762433\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":4000000,\"price\":99.549750,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSPG\",\"quoteTime\":1751607140160,\"securityId\":\"CND10006JM71\",\"settleType\":\"T4\",\"side\":\"ASK\",\"yield\":3.685048}],\"bidPrices\":[{\"brokerId\":\"1941007151231762432\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":4000000,\"price\":93.953000,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSPG\",\"quoteTime\":1751607140012,\"securityId\":\"CND10006JM71\",\"settleType\":\"T4\",\"side\":\"BID\",\"yield\":4.789339}],\"securityId\":\"CND10006JM71\"}","messageId":"D1KNER9XUNB003EKWSPG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"CND10006JM71","timestamp":1751607141723},"sendTime":1751607141727,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:21
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-37
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007151231762433\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":4000000,\"price\":99.549750,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSPG\",\"quoteTime\":1751607140160,\"securityId\":\"CND10006JM71\",\"settleType\":\"T4\",\"side\":\"ASK\",\"yield\":3.685048}],\"bidPrices\":[{\"brokerId\":\"1941007151231762432\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":4000000,\"price\":93.953000,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSPG\",\"quoteTime\":1751607140012,\"securityId\":\"CND10006JM71\",\"settleType\":\"T4\",\"side\":\"BID\",\"yield\":4.789339}],\"securityId\":\"CND10006JM71\"}",
+    "messageId": "D1KNER9XUNB003EKWSPG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "CND10006JM71",
+    "timestamp": 1751607141723
+  },
+  "sendTime": 1751607141727,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:21.911] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-40
+content-length:587
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007151919628289\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":5000000,\"price\":99.951950,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSQ0\",\"quoteTime\":1751607140311,\"securityId\":\"FR0013522802\",\"settleType\":\"T5\",\"side\":\"BID\",\"yield\":3.504775}],\"securityId\":\"FR0013522802\"}","messageId":"D1KNER9XUNB003EKWSQ0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"FR0013522802","timestamp":1751607141873},"sendTime":1751607141882,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:21
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-40
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007151919628289\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":5000000,\"price\":99.951950,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSQ0\",\"quoteTime\":1751607140311,\"securityId\":\"FR0013522802\",\"settleType\":\"T5\",\"side\":\"BID\",\"yield\":3.504775}],\"securityId\":\"FR0013522802\"}",
+    "messageId": "D1KNER9XUNB003EKWSQ0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "FR0013522802",
+    "timestamp": 1751607141873
+  },
+  "sendTime": 1751607141882,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:22.042] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-41
+content-length:890
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007152506830849\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":5000000,\"price\":100.360155,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSQG\",\"quoteTime\":1751607140463,\"securityId\":\"FR0013522802\",\"settleType\":\"T5\",\"side\":\"ASK\",\"yield\":3.467136}],\"bidPrices\":[{\"brokerId\":\"1941007152506830848\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":5000000,\"price\":99.951950,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSQG\",\"quoteTime\":1751607140311,\"securityId\":\"FR0013522802\",\"settleType\":\"T5\",\"side\":\"BID\",\"yield\":3.504775}],\"securityId\":\"FR0013522802\"}","messageId":"D1KNER9XUNB003EKWSQG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"FR0013522802","timestamp":1751607142007},"sendTime":1751607142012,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:22
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-41
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007152506830849\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":5000000,\"price\":100.360155,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSQG\",\"quoteTime\":1751607140463,\"securityId\":\"FR0013522802\",\"settleType\":\"T5\",\"side\":\"ASK\",\"yield\":3.467136}],\"bidPrices\":[{\"brokerId\":\"1941007152506830848\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":2000000,\"orderQty\":5000000,\"price\":99.951950,\"quoteOrderNo\":\"D1KNER9XUNB003EKWSQG\",\"quoteTime\":1751607140311,\"securityId\":\"FR0013522802\",\"settleType\":\"T5\",\"side\":\"BID\",\"yield\":3.504775}],\"securityId\":\"FR0013522802\"}",
+    "messageId": "D1KNER9XUNB003EKWSQG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "FR0013522802",
+    "timestamp": 1751607142007
+  },
+  "sendTime": 1751607142012,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:22.222] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-44
+content-length:587
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007153257611264\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":6000000,\"price\":95.497725,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSR0\",\"quoteTime\":1751607140647,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T6\",\"side\":\"BID\",\"yield\":4.823905}],\"securityId\":\"FR0014003VT4\"}","messageId":"D1KNERHXUNB003EKWSR0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"FR0014003VT4","timestamp":1751607142187},"sendTime":1751607142191,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:22
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-44
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007153257611264\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":6000000,\"price\":95.497725,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSR0\",\"quoteTime\":1751607140647,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T6\",\"side\":\"BID\",\"yield\":4.823905}],\"securityId\":\"FR0014003VT4\"}",
+    "messageId": "D1KNERHXUNB003EKWSR0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "FR0014003VT4",
+    "timestamp": 1751607142187
+  },
+  "sendTime": 1751607142191,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:22.354] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-48
+content-length:889
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007153815453697\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":6000000,\"price\":99.390280,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSRG\",\"quoteTime\":1751607140778,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T6\",\"side\":\"ASK\",\"yield\":3.717547}],\"bidPrices\":[{\"brokerId\":\"1941007153815453696\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":6000000,\"price\":95.497725,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSRG\",\"quoteTime\":1751607140647,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T6\",\"side\":\"BID\",\"yield\":4.823905}],\"securityId\":\"FR0014003VT4\"}","messageId":"D1KNERHXUNB003EKWSRG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"FR0014003VT4","timestamp":1751607142320},"sendTime":1751607142325,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:22
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-48
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007153815453697\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":6000000,\"price\":99.390280,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSRG\",\"quoteTime\":1751607140778,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T6\",\"side\":\"ASK\",\"yield\":3.717547}],\"bidPrices\":[{\"brokerId\":\"1941007153815453696\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":6000000,\"price\":95.497725,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSRG\",\"quoteTime\":1751607140647,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T6\",\"side\":\"BID\",\"yield\":4.823905}],\"securityId\":\"FR0014003VT4\"}",
+    "messageId": "D1KNERHXUNB003EKWSRG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "FR0014003VT4",
+    "timestamp": 1751607142320
+  },
+  "sendTime": 1751607142325,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:22.495] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-51
+content-length:589
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007154440404992\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":7000000,\"price\":101.699125,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSS0\",\"quoteTime\":1751607140930,\"securityId\":\"FR001400MMO0\",\"settleType\":\"T7\",\"side\":\"BID\",\"yield\":49.984189}],\"securityId\":\"FR001400MMO0\"}","messageId":"D1KNERHXUNB003EKWSS0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"FR001400MMO0","timestamp":1751607142460},"sendTime":1751607142464,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:22
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-51
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007154440404992\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":7000000,\"price\":101.699125,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSS0\",\"quoteTime\":1751607140930,\"securityId\":\"FR001400MMO0\",\"settleType\":\"T7\",\"side\":\"BID\",\"yield\":49.984189}],\"securityId\":\"FR001400MMO0\"}",
+    "messageId": "D1KNERHXUNB003EKWSS0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "FR001400MMO0",
+    "timestamp": 1751607142460
+  },
+  "sendTime": 1751607142464,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:22.647] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-54
+content-length:893
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007155019218945\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":7000000,\"price\":104.552250,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSSG\",\"quoteTime\":1751607141066,\"securityId\":\"FR001400MMO0\",\"settleType\":\"T7\",\"side\":\"ASK\",\"yield\":47.114746}],\"bidPrices\":[{\"brokerId\":\"1941007155019218944\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":7000000,\"price\":101.699125,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSSG\",\"quoteTime\":1751607140930,\"securityId\":\"FR001400MMO0\",\"settleType\":\"T7\",\"side\":\"BID\",\"yield\":49.984189}],\"securityId\":\"FR001400MMO0\"}","messageId":"D1KNERHXUNB003EKWSSG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"FR001400MMO0","timestamp":1751607142611},"sendTime":1751607142615,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:22
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-54
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007155019218945\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":7000000,\"price\":104.552250,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSSG\",\"quoteTime\":1751607141066,\"securityId\":\"FR001400MMO0\",\"settleType\":\"T7\",\"side\":\"ASK\",\"yield\":47.114746}],\"bidPrices\":[{\"brokerId\":\"1941007155019218944\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":7000000,\"price\":101.699125,\"quoteOrderNo\":\"D1KNERHXUNB003EKWSSG\",\"quoteTime\":1751607140930,\"securityId\":\"FR001400MMO0\",\"settleType\":\"T7\",\"side\":\"BID\",\"yield\":49.984189}],\"securityId\":\"FR001400MMO0\"}",
+    "messageId": "D1KNERHXUNB003EKWSSG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "FR001400MMO0",
+    "timestamp": 1751607142611
+  },
+  "sendTime": 1751607142615,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:22.985] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-59
+content-length:588
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007156294287360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":4000000,\"orderQty\":8000000,\"price\":91.130040,\"quoteOrderNo\":\"D1KNERHXUNB003EKWST0\",\"quoteTime\":1751607141368,\"securityId\":\"HK0000067535\",\"settleType\":\"T8\",\"side\":\"BID\",\"yield\":75.880578}],\"securityId\":\"HK0000067535\"}","messageId":"D1KNERHXUNB003EKWST0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000067535","timestamp":1751607142950},"sendTime":1751607142954,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:22
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-59
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007156294287360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":4000000,\"orderQty\":8000000,\"price\":91.130040,\"quoteOrderNo\":\"D1KNERHXUNB003EKWST0\",\"quoteTime\":1751607141368,\"securityId\":\"HK0000067535\",\"settleType\":\"T8\",\"side\":\"BID\",\"yield\":75.880578}],\"securityId\":\"HK0000067535\"}",
+    "messageId": "D1KNERHXUNB003EKWST0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000067535",
+    "timestamp": 1751607142950
+  },
+  "sendTime": 1751607142954,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:23.086] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-60
+content-length:891
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007156885684225\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":4000000,\"orderQty\":8000000,\"price\":92.256105,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSTG\",\"quoteTime\":1751607141513,\"securityId\":\"HK0000067535\",\"settleType\":\"T8\",\"side\":\"ASK\",\"yield\":65.905325}],\"bidPrices\":[{\"brokerId\":\"1941007156885684224\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":4000000,\"orderQty\":8000000,\"price\":91.130040,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSTG\",\"quoteTime\":1751607141368,\"securityId\":\"HK0000067535\",\"settleType\":\"T8\",\"side\":\"BID\",\"yield\":75.880578}],\"securityId\":\"HK0000067535\"}","messageId":"D1KNERRXUNB003EKWSTG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000067535","timestamp":1751607143055},"sendTime":1751607143059,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:23
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-60
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007156885684225\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":4000000,\"orderQty\":8000000,\"price\":92.256105,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSTG\",\"quoteTime\":1751607141513,\"securityId\":\"HK0000067535\",\"settleType\":\"T8\",\"side\":\"ASK\",\"yield\":65.905325}],\"bidPrices\":[{\"brokerId\":\"1941007156885684224\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":4000000,\"orderQty\":8000000,\"price\":91.130040,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSTG\",\"quoteTime\":1751607141368,\"securityId\":\"HK0000067535\",\"settleType\":\"T8\",\"side\":\"BID\",\"yield\":75.880578}],\"securityId\":\"HK0000067535\"}",
+    "messageId": "D1KNERRXUNB003EKWSTG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000067535",
+    "timestamp": 1751607143055
+  },
+  "sendTime": 1751607143059,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:23.464] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-63
+content-length:587
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007157527412736\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":9000000,\"price\":96.486230,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSU0\",\"quoteTime\":1751607141668,\"securityId\":\"XS2099049699\",\"settleType\":\"T9\",\"side\":\"BID\",\"yield\":3.707206}],\"securityId\":\"XS2099049699\"}","messageId":"D1KNERRXUNB003EKWSU0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"XS2099049699","timestamp":1751607143428},"sendTime":1751607143432,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:23
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-63
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007157527412736\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":9000000,\"price\":96.486230,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSU0\",\"quoteTime\":1751607141668,\"securityId\":\"XS2099049699\",\"settleType\":\"T9\",\"side\":\"BID\",\"yield\":3.707206}],\"securityId\":\"XS2099049699\"}",
+    "messageId": "D1KNERRXUNB003EKWSU0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "XS2099049699",
+    "timestamp": 1751607143428
+  },
+  "sendTime": 1751607143432,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:23.511] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-64
+content-length:889
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007158324330497\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":9000000,\"price\":98.980485,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSUG\",\"quoteTime\":1751607141855,\"securityId\":\"XS2099049699\",\"settleType\":\"T9\",\"side\":\"ASK\",\"yield\":3.112624}],\"bidPrices\":[{\"brokerId\":\"1941007158324330496\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":9000000,\"price\":96.486230,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSUG\",\"quoteTime\":1751607141668,\"securityId\":\"XS2099049699\",\"settleType\":\"T9\",\"side\":\"BID\",\"yield\":3.707206}],\"securityId\":\"XS2099049699\"}","messageId":"D1KNERRXUNB003EKWSUG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"XS2099049699","timestamp":1751607143480},"sendTime":1751607143483,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:23
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-64
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007158324330497\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":9000000,\"price\":98.980485,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSUG\",\"quoteTime\":1751607141855,\"securityId\":\"XS2099049699\",\"settleType\":\"T9\",\"side\":\"ASK\",\"yield\":3.112624}],\"bidPrices\":[{\"brokerId\":\"1941007158324330496\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":9000000,\"price\":96.486230,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSUG\",\"quoteTime\":1751607141668,\"securityId\":\"XS2099049699\",\"settleType\":\"T9\",\"side\":\"BID\",\"yield\":3.707206}],\"securityId\":\"XS2099049699\"}",
+    "messageId": "D1KNERRXUNB003EKWSUG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "XS2099049699",
+    "timestamp": 1751607143480
+  },
+  "sendTime": 1751607143483,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:23.578] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-65
+content-length:589
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007158898950144\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":11000000,\"price\":86.829060,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSV0\",\"quoteTime\":1751607141994,\"securityId\":\"HK0000091865\",\"settleType\":\"T0\",\"side\":\"BID\",\"yield\":14.358949}],\"securityId\":\"HK0000091865\"}","messageId":"D1KNERRXUNB003EKWSV0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000091865","timestamp":1751607143544},"sendTime":1751607143550,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:23
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-65
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007158898950144\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":11000000,\"price\":86.829060,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSV0\",\"quoteTime\":1751607141994,\"securityId\":\"HK0000091865\",\"settleType\":\"T0\",\"side\":\"BID\",\"yield\":14.358949}],\"securityId\":\"HK0000091865\"}",
+    "messageId": "D1KNERRXUNB003EKWSV0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000091865",
+    "timestamp": 1751607143544
+  },
+  "sendTime": 1751607143550,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:23.708] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-68
+content-length:893
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007159364517889\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":11000000,\"price\":89.634795,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSVG\",\"quoteTime\":1751607142100,\"securityId\":\"HK0000091865\",\"settleType\":\"T0\",\"side\":\"ASK\",\"yield\":11.909646}],\"bidPrices\":[{\"brokerId\":\"1941007159364517888\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":11000000,\"price\":86.829060,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSVG\",\"quoteTime\":1751607141994,\"securityId\":\"HK0000091865\",\"settleType\":\"T0\",\"side\":\"BID\",\"yield\":14.358949}],\"securityId\":\"HK0000091865\"}","messageId":"D1KNERRXUNB003EKWSVG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000091865","timestamp":1751607143674},"sendTime":1751607143678,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:23
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-68
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007159364517889\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":11000000,\"price\":89.634795,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSVG\",\"quoteTime\":1751607142100,\"securityId\":\"HK0000091865\",\"settleType\":\"T0\",\"side\":\"ASK\",\"yield\":11.909646}],\"bidPrices\":[{\"brokerId\":\"1941007159364517888\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":11000000,\"price\":86.829060,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSVG\",\"quoteTime\":1751607141994,\"securityId\":\"HK0000091865\",\"settleType\":\"T0\",\"side\":\"BID\",\"yield\":14.358949}],\"securityId\":\"HK0000091865\"}",
+    "messageId": "D1KNERRXUNB003EKWSVG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000091865",
+    "timestamp": 1751607143674
+  },
+  "sendTime": 1751607143678,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:23.843] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-71
+content-length:589
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007159968497664\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSW0\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}","messageId":"D1KNERRXUNB003EKWSW0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000096021","timestamp":1751607143805},"sendTime":1751607143815,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:23
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-71
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007159968497664\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSW0\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}",
+    "messageId": "D1KNERRXUNB003EKWSW0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000096021",
+    "timestamp": 1751607143805
+  },
+  "sendTime": 1751607143815,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:23.951] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-74
+content-length:892
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007160488591361\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":92.413770,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142373,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":9.210692}],\"bidPrices\":[{\"brokerId\":\"1941007160488591360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}","messageId":"D1KNERRXUNB003EKWSWG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000096021","timestamp":1751607143910},"sendTime":1751607143922,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:23
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-74
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007160488591361\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":92.413770,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142373,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":9.210692}],\"bidPrices\":[{\"brokerId\":\"1941007160488591360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}",
+    "messageId": "D1KNERRXUNB003EKWSWG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000096021",
+    "timestamp": 1751607143910
+  },
+  "sendTime": 1751607143922,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:24.086] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-77
+content-length:588
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:24
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-77
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}",
+    "messageId": "D1KNES1XUNB003EKWSX0",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000098928",
+    "timestamp": 1751607144048
+  },
+  "sendTime": 1751607144053,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:24.199] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-78
+content-length:892
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007161491030017\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":100.235412,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSXG\",\"quoteTime\":1751607142613,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":4.042257}],\"bidPrices\":[{\"brokerId\":\"1941007161491030016\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSXG\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSXG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144166},"sendTime":1751607144170,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:24
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-78
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007161491030017\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":100.235412,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSXG\",\"quoteTime\":1751607142613,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":4.042257}],\"bidPrices\":[{\"brokerId\":\"1941007161491030016\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSXG\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}",
+    "messageId": "D1KNES1XUNB003EKWSXG",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000098928",
+    "timestamp": 1751607144166
+  },
+  "sendTime": 1751607144170,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:24.307] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-79
+content-length:588
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007161981763584\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":15000000,\"price\":90.215085,\"quoteOrderNo\":\"D1KNES1XUNB003EKWT00\",\"quoteTime\":1751607142728,\"securityId\":\"HK0000109824\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":9.708864}],\"securityId\":\"HK0000109824\"}","messageId":"D1KNES1XUNB003EKWT00","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000109824","timestamp":1751607144277},"sendTime":1751607144281,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:24
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-79
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007161981763584\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":15000000,\"price\":90.215085,\"quoteOrderNo\":\"D1KNES1XUNB003EKWT00\",\"quoteTime\":1751607142728,\"securityId\":\"HK0000109824\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":9.708864}],\"securityId\":\"HK0000109824\"}",
+    "messageId": "D1KNES1XUNB003EKWT00",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000109824",
+    "timestamp": 1751607144277
+  },
+  "sendTime": 1751607144281,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:32:24.401] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:e983d379-807b-4c49-b01e-b32d10326ba6
+message-id:ea763761-005f-360e-099d-494cb98256a5-80
+content-length:891
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007162426359808\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":15000000,\"price\":91.365894,\"quoteOrderNo\":\"D1KNES1XUNB003EKWT0G\",\"quoteTime\":1751607142827,\"securityId\":\"HK0000109824\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":8.937026}],\"bidPrices\":[{\"brokerId\":\"1941007162422165504\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":15000000,\"price\":90.215085,\"quoteOrderNo\":\"D1KNES1XUNB003EKWT0G\",\"quoteTime\":1751607142728,\"securityId\":\"HK0000109824\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":9.708864}],\"securityId\":\"HK0000109824\"}","messageId":"D1KNES1XUNB003EKWT0G","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000109824","timestamp":1751607144364},"sendTime":1751607144370,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:32:24
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: ea763761-005f-360e-099d-494cb98256a5-80
+订阅ID: e983d379-807b-4c49-b01e-b32d10326ba6
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941007162426359808\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":15000000,\"price\":91.365894,\"quoteOrderNo\":\"D1KNES1XUNB003EKWT0G\",\"quoteTime\":1751607142827,\"securityId\":\"HK0000109824\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":8.937026}],\"bidPrices\":[{\"brokerId\":\"1941007162422165504\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":15000000,\"price\":90.215085,\"quoteOrderNo\":\"D1KNES1XUNB003EKWT0G\",\"quoteTime\":1751607142728,\"securityId\":\"HK0000109824\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":9.708864}],\"securityId\":\"HK0000109824\"}",
+    "messageId": "D1KNES1XUNB003EKWT0G",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000109824",
+    "timestamp": 1751607144364
+  },
+  "sendTime": 1751607144370,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+
+
+
+Starting: D:\Users\jingbo.yang\go\bin\dlv.exe dap --listen=127.0.0.1:62609 from d:\Users\jingbo.yang\Desktop\projectCode\bond-yaden
+DAP server listening at: 127.0.0.1:62609
+Type 'dlv help' for list of commands.
+开始亚丁ATS系统测试...
+第一步：登录获取Token...
+发送登录请求到: https://adenapi.cstm.adenfin.com/cust-gateway/cust-auth/account/outApi/doLogin
+响应状态: 200 OK
+响应内容: {"resMsg":"2w138zNnTugBSBNDXNgzfcG+IFpjTAYGI3PWJ9TgRWpG7yztTbZS4W+EvIkx4pMI/CgTLLJGDrLv9FCZuWOx0caDV/sRalp7bw+zaPaRPkw=","resKey":"gtjEVCVdGozWkwFUtbyGG8QdjZplASiOcM/PjBHCjJZ8WcwV3conel21YPWYBeV0CKWfwrESM5Y7Brm4xNL7fkwjfRzo42gfx+OJ4AWwM0TB8vOU7XiDBQJfK8rkFkBiSN7qhlt0DRsdBSxvWHKESZhF4gohleZ5m7EpSVwMCuU="}
+响应状态:{"msg":"登录成功","code":200,"data":"1cR1hCxj51r2gkc5AllmLY4K4Jp9LCqZ"}登录成功，获取到Token: 1cR1hCxj51r2gkc5Allm...
+第二步：建立WebSocket连接...
+连接地址: wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws?token=Bearer+1cR1hCxj51r2gkc5AllmLY4K4Jp9LCqZ
+WebSocket连接成功!
+第三步：建立STOMP连接...
+[13:37:28.671] 发送STOMP帧:
+CONNECT
+host:localhost
+heart-beat:20000,600000
+accept-version:1.0,1.1,1.2
+token:1cR1hCxj51r2gkc5AllmLY4K4Jp9LCqZ
+imei:test-device-001
+appOs:windows
+appVersion:1.0.0
+deviceInfo:test-client
+
+
+----------------------------
+[13:37:28.755] 收到STOMP帧:
+CONNECTED
+version:1.2
+heart-beat:20000,20000
+user-name:AF_ATSTEST10001
+
+
+----------------------------
+STOMP连接成功!
+第四步：订阅行情消息...
+订阅主题: /user/queue/v1/apiatsbondquote/messages
+订阅成功，开始监听消息...
+连接成功，等待消息推送...
+按 Ctrl+C 退出
+[13:37:28.756] 发送STOMP帧:
+SUBSCRIBE
+destination:/user/queue/v1/apiatsbondquote/messages
+ack:auto
+id:32cda843-f33e-4c22-acb9-3211a76a3e7d
+receipt:receipt-32cda843-f33e-4c22-acb9-3211a76a3e7d
+
+
+----------------------------
+[13:37:43.757] 发送STOMP帧:
+
+
+----------------------------
+[13:37:46.155] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:32cda843-f33e-4c22-acb9-3211a76a3e7d
+message-id:f672ac3d-a6d1-0c4d-3051-92b920b1e293-82
+content-length:588
+
+{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941008511989809152\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNHAHXUNB003EKWT10\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNHAHXUNB003EKWT10","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607466126},"sendTime":1751607466132,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:37:46
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: f672ac3d-a6d1-0c4d-3051-92b920b1e293-82
+订阅ID: 32cda843-f33e-4c22-acb9-3211a76a3e7d
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941008511989809152\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNHAHXUNB003EKWT10\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}",
+    "messageId": "D1KNHAHXUNB003EKWT10",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000098928",
+    "timestamp": 1751607466126
+  },
+  "sendTime": 1751607466132,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:37:51.696] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:32cda843-f33e-4c22-acb9-3211a76a3e7d
+message-id:f672ac3d-a6d1-0c4d-3051-92b920b1e293-85
+content-length:589
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941008535146561536\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":11000000,\"price\":89.634795,\"quoteOrderNo\":\"D1KNHBRXUNB003EKWT1G\",\"quoteTime\":1751607142100,\"securityId\":\"HK0000091865\",\"settleType\":\"T0\",\"side\":\"ASK\",\"yield\":11.909646}],\"bidPrices\":[],\"securityId\":\"HK0000091865\"}","messageId":"D1KNHBRXUNB003EKWT1G","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000091865","timestamp":1751607471672},"sendTime":1751607471676,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:37:51
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: f672ac3d-a6d1-0c4d-3051-92b920b1e293-85
+订阅ID: 32cda843-f33e-4c22-acb9-3211a76a3e7d
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941008535146561536\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":1000000,\"orderQty\":11000000,\"price\":89.634795,\"quoteOrderNo\":\"D1KNHBRXUNB003EKWT1G\",\"quoteTime\":1751607142100,\"securityId\":\"HK0000091865\",\"settleType\":\"T0\",\"side\":\"ASK\",\"yield\":11.909646}],\"bidPrices\":[],\"securityId\":\"HK0000091865\"}",
+    "messageId": "D1KNHBRXUNB003EKWT1G",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000091865",
+    "timestamp": 1751607471672
+  },
+  "sendTime": 1751607471676,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:37:58.757] 发送STOMP帧:
+
+
+----------------------------
+[13:38:13.758] 发送STOMP帧:
+
+
+----------------------------
+[13:38:14.333] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:32cda843-f33e-4c22-acb9-3211a76a3e7d
+message-id:f672ac3d-a6d1-0c4d-3051-92b920b1e293-88
+content-length:893
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941008630067855360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.413770,\"quoteOrderNo\":\"D1KNHHHXUNB003EKWT20\",\"quoteTime\":1751607492730,\"securityId\":\"HK0000096021\",\"settleType\":\"T4\",\"side\":\"ASK\",\"yield\":10.808052}],\"bidPrices\":[{\"brokerId\":\"1941008630063661056\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNHHHXUNB003EKWT20\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}","messageId":"D1KNHHHXUNB003EKWT20","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000096021","timestamp":1751607494303},"sendTime":1751607494307,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:38:14
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: f672ac3d-a6d1-0c4d-3051-92b920b1e293-88
+订阅ID: 32cda843-f33e-4c22-acb9-3211a76a3e7d
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941008630067855360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.413770,\"quoteOrderNo\":\"D1KNHHHXUNB003EKWT20\",\"quoteTime\":1751607492730,\"securityId\":\"HK0000096021\",\"settleType\":\"T4\",\"side\":\"ASK\",\"yield\":10.808052}],\"bidPrices\":[{\"brokerId\":\"1941008630063661056\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNHHHXUNB003EKWT20\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}",
+    "messageId": "D1KNHHHXUNB003EKWT20",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "HK0000096021",
+    "timestamp": 1751607494303
+  },
+  "sendTime": 1751607494307,
+  "wsMessageType": "ATS_QUOTE"
+}
+==================================
+[13:38:28.759] 发送STOMP帧:
+
+
+----------------------------
+[13:38:41.237] 收到STOMP帧:
+MESSAGE
+message-type:ATS_QUOTE
+destination:/user/queue/v1/apiatsbondquote/messages
+content-type:text/plain;charset=UTF-8
+subscription:32cda843-f33e-4c22-acb9-3211a76a3e7d
+message-id:f672ac3d-a6d1-0c4d-3051-92b920b1e293-92
+content-length:889
+
+{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941008742978519040\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":6000000,\"price\":99.390280,\"quoteOrderNo\":\"D1KNHQ9XUNB003EKWT2G\",\"quoteTime\":1751607140778,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T6\",\"side\":\"ASK\",\"yield\":3.717547}],\"bidPrices\":[{\"brokerId\":\"1941008742970130432\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":6000000,\"price\":94.497725,\"quoteOrderNo\":\"D1KNHQ9XUNB003EKWT2G\",\"quoteTime\":1751607519656,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":5.111921}],\"securityId\":\"FR0014003VT4\"}","messageId":"D1KNHQ9XUNB003EKWT2G","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"FR0014003VT4","timestamp":1751607521207},"sendTime":1751607521213,"wsMessageType":"ATS_QUOTE"}
+----------------------------
+
+========== 收到新消息 ==========
+时间: 2025-07-04 13:38:41
+目的地: /user/queue/v1/apiatsbondquote/messages
+内容类型: text/plain;charset=UTF-8
+消息ID: f672ac3d-a6d1-0c4d-3051-92b920b1e293-92
+订阅ID: 32cda843-f33e-4c22-acb9-3211a76a3e7d
+消息内容:
+{
+  "data": {
+    "data": "{\"askPrices\":[{\"brokerId\":\"1941008742978519040\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":3000000,\"orderQty\":6000000,\"price\":99.390280,\"quoteOrderNo\":\"D1KNHQ9XUNB003EKWT2G\",\"quoteTime\":1751607140778,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T6\",\"side\":\"ASK\",\"yield\":3.717547}],\"bidPrices\":[{\"brokerId\":\"1941008742970130432\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":6000000,\"price\":94.497725,\"quoteOrderNo\":\"D1KNHQ9XUNB003EKWT2G\",\"quoteTime\":1751607519656,\"securityId\":\"FR0014003VT4\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":5.111921}],\"securityId\":\"FR0014003VT4\"}",
+    "messageId": "D1KNHQ9XUNB003EKWT2G",
+    "messageType": "BOND_ORDER_BOOK_MSG",
+    "organization": "AF",
+    "receiverId": "FR0014003VT4",
+    "timestamp": 1751607521207
+  },
+  "sendTime": 1751607521213,
+  "wsMessageType": "ATS_QUOTE"
+}

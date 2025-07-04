@@ -304,9 +304,9 @@ func (c *StompClient) connectStomp() error {
 		stomp.ConnOpt.Login("", ""),
 		// 虚拟主机名（STOMP协议要求）
 		stomp.ConnOpt.Host("localhost"),
-		// 心跳配置：发送心跳间隔30秒，接收心跳超时10秒
+		// 心跳配置：发送心跳间隔20秒，接收心跳超时6000秒
 		// 用于保持连接活跃和检测连接状态
-		stomp.ConnOpt.HeartBeat(10*time.Second, 50*time.Second),
+		stomp.ConnOpt.HeartBeat(20*time.Second, 6000*time.Second),
 		// 自定义STOMP头部信息
 		stomp.ConnOpt.Header("token", c.token),            // 访问令牌
 		stomp.ConnOpt.Header("imei", "test-device-001"),   // 设备IMEI标识
@@ -388,28 +388,6 @@ func (c *StompClient) subscribe() error {
 	return nil
 }
 
-// func encryptNoLoginRequest(content string) (*EncryptedNoLoginRequest, error) {
-// 	// 生成AES密钥
-// 	aesKey := generateAESKey()
-
-// 	// 使用AES加密内容
-// 	reqMsg, err := aesEncrypt(content, aesKey)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("AES加密失败: %v", err)
-// 	}
-
-// 	// 使用RSA加密AES密钥
-// 	reqKey, err := rsaEncrypt(aesKey)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("RSA加密失败: %v", err)
-// 	}
-
-// 	return &EncryptedNoLoginRequest{
-// 		ReqMsg: reqMsg,
-// 		ReqKey: reqKey,
-// 	}, nil
-// }
-
 // WebSocketNetConn WebSocket网络连接适配器
 // 将WebSocket连接包装成net.Conn接口，供STOMP库使用
 // STOMP库需要net.Conn接口，而WebSocket连接需要适配
@@ -432,6 +410,7 @@ func (w *WebSocketNetConn) Read(p []byte) (n int, err error) {
 	// 读取WebSocket消息（忽略消息类型）
 	_, message, err := w.conn.ReadMessage()
 	if err == nil && len(message) > 0 {
+		fmt.Printf("[%s] ", time.Now().Format("15:04:05.000"))
 		fmt.Println("收到STOMP帧:")
 		fmt.Println(string(message))
 		fmt.Println("----------------------------")
@@ -445,6 +424,7 @@ func (w *WebSocketNetConn) Read(p []byte) (n int, err error) {
 // 向WebSocket连接写入数据
 func (w *WebSocketNetConn) Write(p []byte) (n int, err error) {
 	if len(p) > 0 {
+		fmt.Printf("[%s] ", time.Now().Format("15:04:05.000"))
 		fmt.Println("发送STOMP帧:")
 		fmt.Println(string(p))
 		fmt.Println("----------------------------")
@@ -463,24 +443,24 @@ func (w *WebSocketNetConn) Close() error {
 	return w.conn.Close()
 }
 
-// SetDeadline 实现net.Conn接口的SetDeadline方法
-// 设置读写超时时间
-func (w *WebSocketNetConn) SetDeadline(t time.Time) error {
-	// 同时设置读和写的超时时间
-	if err := w.conn.SetReadDeadline(t); err != nil {
-		return err
-	}
-	return w.conn.SetWriteDeadline(t)
-}
+// // SetDeadline 实现net.Conn接口的SetDeadline方法
+// // 设置读写超时时间
+// func (w *WebSocketNetConn) SetDeadline(t time.Time) error {
+// 	// 同时设置读和写的超时时间
+// 	if err := w.conn.SetReadDeadline(t); err != nil {
+// 		return err
+// 	}
+// 	return w.conn.SetWriteDeadline(t)
+// }
 
-// SetReadDeadline 实现net.Conn接口的SetReadDeadline方法
-// 设置读取超时时间
-func (w *WebSocketNetConn) SetReadDeadline(t time.Time) error {
-	return w.conn.SetReadDeadline(t)
-}
+// // SetReadDeadline 实现net.Conn接口的SetReadDeadline方法
+// // 设置读取超时时间
+// func (w *WebSocketNetConn) SetReadDeadline(t time.Time) error {
+// 	return w.conn.SetReadDeadline(t)
+// }
 
-// SetWriteDeadline 实现net.Conn接口的SetWriteDeadline方法
-// 设置写入超时时间
-func (w *WebSocketNetConn) SetWriteDeadline(t time.Time) error {
-	return w.conn.SetWriteDeadline(t)
-}
+// // SetWriteDeadline 实现net.Conn接口的SetWriteDeadline方法
+// // 设置写入超时时间
+// func (w *WebSocketNetConn) SetWriteDeadline(t time.Time) error {
+// 	return w.conn.SetWriteDeadline(t)
+// }
