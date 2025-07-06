@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -463,4 +464,12 @@ func (w *WebSocketNetConn) SetReadDeadline(t time.Time) error {
 // 设置写入超时时间
 func (w *WebSocketNetConn) SetWriteDeadline(t time.Time) error {
 	return w.conn.SetWriteDeadline(t)
+}
+
+func (w *WebSocketNetConn) LocalAddr() net.Addr {
+	return w.conn.LocalAddr()
+}
+
+func (w *WebSocketNetConn) RemoteAddr() net.Addr {
+	return w.conn.RemoteAddr()
 }

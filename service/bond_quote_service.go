@@ -2,10 +2,14 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"test/model"
 )
@@ -28,12 +32,12 @@ type BondQuoteMessage struct {
 }
 
 type BondQuoteData struct {
-	Data         string `json:"data"` // 内部JSON字符串
-	MessageID    string `json:"messageId"`
-	MessageType  string `json:"messageType"`
-	Organization string `json:"organization"`
-	ReceiverID   string `json:"receiverId"`
-	Timestamp    int64  `json:"timestamp"`
+	QuotePriceData string `json:"data"` // 内部JSON字符串
+	MessageID      string `json:"messageId"`
+	MessageType    string `json:"messageType"`
+	Organization   string `json:"organization"`
+	ReceiverID     string `json:"receiverId"`
+	Timestamp      int64  `json:"timestamp"`
 }
 
 // 报价数据结构体 - 用于解析内部JSON字符串
@@ -59,6 +63,221 @@ type QuotePrice struct {
 	Yield            float64 `json:"yield"`
 }
 
+// ParsedQuote 解析结果：外层元信息 + 内层行情数据
+type ParsedQuote struct {
+	Meta    BondQuoteMessage // WsMessageType、MessageId...
+	Payload QuotePriceData   // askPrices / bidPrices / securityId
+}
+
+// ParseBondQuote 把 STOMP body 原始 JSON 解析成领域对象
+func ParseBondQuote(raw []byte) (*ParsedQuote, error) {
+	var msg BondQuoteMessage
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		return nil, fmt.Errorf("unmarshal BondQuoteMessage: %w", err)
+	}
+
+	// if msg.WsMessageType != "ATS_QUOTE" {
+	// 	return nil, ErrNotQuote // 上层可选择直接丢弃
+	// }
+
+	var payload QuotePriceData
+	if err := json.Unmarshal([]byte(msg.Data.QuotePriceData), &payload); err != nil {
+		return nil, fmt.Errorf("unmarshal QuotePriceData: %w", err)
+	}
+
+	// isin必须存在
+	if payload.SecurityID == "" {
+		return nil, errors.New("securityId is empty")
+	}
+
+	return &ParsedQuote{
+		Meta:    msg,
+		Payload: payload,
+	}, nil
+}
+
+// channels & constants – 调整容量/批量大小即可
+const (
+	rawCap     = 20000 // 原始 JSON 缓冲
+	parsedCap  = 4000  // 解析后缓冲
+	workerNum  = 8     // 解析/写库协程数
+	batchSize  = 300   // 单次批写条数
+	flushDelay = 100 * time.Millisecond
+)
+
+var (
+	RawChan    = make(chan []byte, rawCap)
+	ParsedChan = make(chan *ParsedQuote, parsedCap)
+	DeadChan   = make(chan []byte, 1000) // 解析失败
+)
+
+// StartParseWorkers — 解析层
+func StartParseWorkers(pool *sync.WaitGroup) {
+	for i := 0; i < workerNum; i++ {
+		pool.Add(1)
+		go func() {
+			defer pool.Done()
+			for raw := range RawChan {
+				pq, err := ParseBondQuote(raw)
+				switch {
+				// case err == service.ErrNotQuote:
+				// 	continue // 过滤非行情
+				case err != nil:
+					DeadChan <- raw
+					continue
+				}
+				ParsedChan <- pq
+			}
+		}()
+	}
+}
+
+// StartDBWorkers — 写库层
+func StartDBWorkers(db *gorm.DB, pool *sync.WaitGroup) {
+	// 提前关掉自动事务和预编译
+	db = db.Session(&gorm.Session{SkipDefaultTransaction: true, PrepareStmt: true})
+
+	for i := 0; i < workerNum; i++ {
+		pool.Add(1)
+		go func() {
+			defer pool.Done()
+			ticker := time.NewTicker(flushDelay)
+			batch := make([]*ParsedQuote, 0, batchSize)
+
+			flush := func() {
+				if len(batch) == 0 {
+					return
+				}
+				if err := InsertBatch(db, batch); err != nil {
+					log.Printf("批量写库失败: %v", err)
+				}
+				batch = batch[:0]
+			}
+
+			for {
+				select {
+				case pq, ok := <-ParsedChan:
+					if !ok { // channel 关闭，写最后一批
+						flush()
+						return
+					}
+					batch = append(batch, pq)
+					if len(batch) >= batchSize {
+						flush()
+					}
+				case <-ticker.C:
+					flush()
+				}
+			}
+		}()
+	}
+}
+
+// InsertBatch 把解析后的批次写入 DB
+func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
+	// 1. 聚合
+	var details []model.BondQuoteDetail
+	latestMap := make(map[string]*model.BondLatestQuote)
+
+	for _, pq := range batch {
+		meta := pq.Meta  // 外层
+		pd := pq.Payload // 内层
+
+		// ASK / BID 明细
+		addDetail := func(q QuotePrice) {
+			qTime := time.UnixMilli(q.QuoteTime)
+			yield := q.Yield
+			minQty := q.MinTransQuantity
+
+			details = append(details, model.BondQuoteDetail{
+				MessageID:        meta.Data.MessageID,
+				MessageType:      meta.Data.MessageType,
+				Timestamp:        meta.Data.Timestamp,
+				ISIN:             pd.SecurityID,
+				BrokerID:         q.BrokerID,
+				Side:             q.Side,
+				Price:            q.Price,
+				Yield:            &yield,
+				OrderQty:         q.OrderQty,
+				MinTransQuantity: &minQty,
+				QuoteOrderNo:     q.QuoteOrderNo,
+				QuoteTime:        qTime,
+				SettleType:       &q.SettleType,
+				IsValid:          &q.IsValid,
+				IsTbd:            &q.IsTbd,
+				CreateTime:       time.Now(),
+			})
+		}
+
+		for _, ask := range pd.AskPrices {
+			addDetail(ask)
+		}
+		for _, bid := range pd.BidPrices {
+			addDetail(bid)
+		}
+
+		// 最新价挑选（在同一批内取最优）
+		updateBest := func(q QuotePrice) {
+			lq, ok := latestMap[pd.SecurityID]
+			if !ok {
+				lq = &model.BondLatestQuote{ISIN: pd.SecurityID}
+				latestMap[pd.SecurityID] = lq
+			}
+			switch q.Side {
+			case "BID":
+				if lq.BidPrice == nil || q.Price > *lq.BidPrice {
+					price, qty, yld := q.Price, q.OrderQty, q.Yield
+					brokerID := q.BrokerID
+					qTime := time.UnixMilli(q.QuoteTime)
+					lq.BidPrice, lq.BidQty, lq.BidYield = &price, &qty, &yld
+					lq.BidBrokerID, lq.BidQuoteTime = &brokerID, &qTime
+				}
+			case "ASK":
+				if lq.AskPrice == nil || q.Price < *lq.AskPrice {
+					price, qty, yld := q.Price, q.OrderQty, q.Yield
+					brokerID := q.BrokerID
+					qTime := time.UnixMilli(q.QuoteTime)
+					lq.AskPrice, lq.AskQty, lq.AskYield = &price, &qty, &yld
+					lq.AskBrokerID, lq.AskQuoteTime = &brokerID, &qTime
+				}
+			}
+			lq.LastUpdateTime = time.Now()
+		}
+		for _, ask := range pd.AskPrices {
+			updateBest(ask)
+		}
+		for _, bid := range pd.BidPrices {
+			updateBest(bid)
+		}
+	}
+
+	// 2. 执行事务
+	return db.Transaction(func(tx *gorm.DB) error {
+		// 明细批量写
+		if len(details) > 0 {
+			if err := tx.CreateInBatches(details, 1000).Error; err != nil {
+				return err
+			}
+		}
+
+		// 最新价 UPSERT
+		if len(latestMap) > 0 {
+			var latestSlice []model.BondLatestQuote
+			for _, v := range latestMap {
+				latestSlice = append(latestSlice, *v)
+			}
+
+			if err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "isin"}}, // 唯一键
+				UpdateAll: true,
+			}).Create(&latestSlice).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // ProcessMessage 处理推送消息
 func (s *BondQuoteService) ProcessMessage(messageBody []byte) error {
 	// 1. 解析外层JSON消息
@@ -74,7 +293,7 @@ func (s *BondQuoteService) ProcessMessage(messageBody []byte) error {
 
 	// 2. 解析内部JSON字符串
 	var priceData QuotePriceData
-	if err := json.Unmarshal([]byte(message.Data.Data), &priceData); err != nil {
+	if err := json.Unmarshal([]byte(message.Data.QuotePriceData), &priceData); err != nil {
 		return fmt.Errorf("解析报价数据失败: %w", err)
 	}
 
