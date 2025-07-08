@@ -41,7 +41,8 @@ func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string) {
 	// 启动定时任务
 	go func() {
 		// 等待到下一个整点
-		time.Sleep(initialDelay)
+		// time.Sleep(initialDelay)
+		time.Sleep(10 * time.Second)
 
 		// 每小时执行一次导出
 		ticker := time.NewTicker(1 * time.Hour)
@@ -87,7 +88,6 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 		"债券代码", "消息ID", "消息类型", "发送时间", "时间戳", "更新时间",
 		"买方券商ID", "买方价格", "买方收益率", "买方数量", "买方报价时间",
 		"卖方券商ID", "卖方价格", "卖方收益率", "卖方数量", "卖方报价时间",
-		"价差",
 	}
 
 	for i, header := range headers {
@@ -96,9 +96,9 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 	}
 
 	// 填充数据
-	for i, quote := range latestQuotes {
-		row := i + 2 // 从第2行开始（第1行是表头）
+	rowIndex := 2 // 从第2行开始（第1行是表头）
 
+	for _, quote := range latestQuotes {
 		// 解析JSON数据
 		var msg BondQuoteMessage
 		if err := json.Unmarshal([]byte(quote.RawJSON), &msg); err != nil {
@@ -113,53 +113,57 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 			continue
 		}
 
-		// 基本信息
-		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), quote.ISIN)
-		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), quote.MessageID)
-		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), quote.MessageType)
-		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"))
-		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"))
-		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"))
-
-		// 找出最优买入价和卖出价
-		var bestBid, bestAsk *QuotePrice
-
-		// 找最优买入价（价格最高的BID）
-		for i := range payload.BidPrices {
-			if bestBid == nil || payload.BidPrices[i].Price > bestBid.Price {
-				bestBid = &payload.BidPrices[i]
-			}
+		// 如果没有买入或卖出报价，至少创建一行基本信息
+		if len(payload.BidPrices) == 0 && len(payload.AskPrices) == 0 {
+			// 基本信息
+			f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), quote.ISIN)
+			f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), quote.MessageID)
+			f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIndex), quote.MessageType)
+			f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIndex), time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIndex), time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIndex), quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"))
+			rowIndex++
+			continue
 		}
 
-		// 找最优卖出价（价格最低的ASK）
-		for i := range payload.AskPrices {
-			if bestAsk == nil || payload.AskPrices[i].Price < bestAsk.Price {
-				bestAsk = &payload.AskPrices[i]
-			}
+		// 处理所有买入报价
+		for _, bid := range payload.BidPrices {
+			// 基本信息
+			f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), quote.ISIN)
+			f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), quote.MessageID)
+			f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIndex), quote.MessageType)
+			f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIndex), time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIndex), time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIndex), quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"))
+
+			// 买方数据
+			f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIndex), bid.BrokerID)
+			f.SetCellValue(sheetName, fmt.Sprintf("H%d", rowIndex), bid.Price)
+			f.SetCellValue(sheetName, fmt.Sprintf("I%d", rowIndex), bid.Yield)
+			f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIndex), bid.OrderQty)
+			f.SetCellValue(sheetName, fmt.Sprintf("K%d", rowIndex), time.UnixMilli(bid.QuoteTime).Format("2006-01-02 15:04:05.000"))
+
+			rowIndex++
 		}
 
-		// 填充买方数据
-		if bestBid != nil {
-			f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), bestBid.BrokerID)
-			f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), bestBid.Price)
-			f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), bestBid.Yield)
-			f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), bestBid.OrderQty)
-			f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), time.UnixMilli(bestBid.QuoteTime).Format("2006-01-02 15:04:05.000"))
-		}
+		// 处理所有卖出报价
+		for _, ask := range payload.AskPrices {
+			// 基本信息
+			f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), quote.ISIN)
+			f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), quote.MessageID)
+			f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIndex), quote.MessageType)
+			f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIndex), time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIndex), time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIndex), quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"))
 
-		// 填充卖方数据
-		if bestAsk != nil {
-			f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), bestAsk.BrokerID)
-			f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), bestAsk.Price)
-			f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), bestAsk.Yield)
-			f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), bestAsk.OrderQty)
-			f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), time.UnixMilli(bestAsk.QuoteTime).Format("2006-01-02 15:04:05.000"))
-		}
+			// 卖方数据
+			f.SetCellValue(sheetName, fmt.Sprintf("L%d", rowIndex), ask.BrokerID)
+			f.SetCellValue(sheetName, fmt.Sprintf("M%d", rowIndex), ask.Price)
+			f.SetCellValue(sheetName, fmt.Sprintf("N%d", rowIndex), ask.Yield)
+			f.SetCellValue(sheetName, fmt.Sprintf("O%d", rowIndex), ask.OrderQty)
+			f.SetCellValue(sheetName, fmt.Sprintf("P%d", rowIndex), time.UnixMilli(ask.QuoteTime).Format("2006-01-02 15:04:05.000"))
 
-		// 计算价差
-		if bestBid != nil && bestAsk != nil {
-			spread := bestAsk.Price - bestBid.Price
-			f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), spread)
+			rowIndex++
 		}
 	}
 
