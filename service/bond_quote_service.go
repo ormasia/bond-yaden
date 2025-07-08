@@ -14,15 +14,15 @@ import (
 	"test/model"
 )
 
-// BondQuoteService 债券行情服务
-type BondQuoteService struct {
-	db *gorm.DB
-}
+// // BondQuoteService 债券行情服务
+// type BondQuoteService struct {
+// 	db *gorm.DB
+// }
 
-// NewBondQuoteService 创建债券行情服务
-func NewBondQuoteService(db *gorm.DB) *BondQuoteService {
-	return &BondQuoteService{db: db}
-}
+// // NewBondQuoteService 创建债券行情服务
+// func NewBondQuoteService(db *gorm.DB) *BondQuoteService {
+// 	return &BondQuoteService{db: db}
+// }
 
 // 响应消息结构体
 type BondQuoteMessage struct {
@@ -56,7 +56,7 @@ type QuotePrice struct {
 	OrderQty         float64 `json:"orderQty"`
 	Price            float64 `json:"price"`
 	QuoteOrderNo     string  `json:"quoteOrderNo"`
-	QuoteTime        int64   `json:"quoteTime"` // 注意：这是毫秒时间戳
+	QuoteTime        int64   `json:"quoteTime"`
 	SecurityID       string  `json:"securityId"`
 	SettleType       string  `json:"settleType"`
 	Side             string  `json:"side"`
@@ -76,10 +76,6 @@ func ParseBondQuote(raw []byte) (*ParsedQuote, error) {
 		return nil, fmt.Errorf("unmarshal BondQuoteMessage: %w", err)
 	}
 
-	// if msg.WsMessageType != "ATS_QUOTE" {
-	// 	return nil, ErrNotQuote // 上层可选择直接丢弃
-	// }
-
 	var payload QuotePriceData
 	if err := json.Unmarshal([]byte(msg.Data.QuotePriceData), &payload); err != nil {
 		return nil, fmt.Errorf("unmarshal QuotePriceData: %w", err)
@@ -96,23 +92,8 @@ func ParseBondQuote(raw []byte) (*ParsedQuote, error) {
 	}, nil
 }
 
-// channels & constants – 调整容量/批量大小即可
-const (
-	rawCap     = 20000 // 原始 JSON 缓冲
-	parsedCap  = 4000  // 解析后缓冲
-	workerNum  = 8     // 解析/写库协程数
-	batchSize  = 300   // 单次批写条数
-	flushDelay = 100 * time.Millisecond
-)
-
-var (
-	RawChan    = make(chan []byte, rawCap)
-	ParsedChan = make(chan *ParsedQuote, parsedCap)
-	DeadChan   = make(chan []byte, 1000) // 解析失败
-)
-
 // StartParseWorkers — 解析层
-func StartParseWorkers(pool *sync.WaitGroup) {
+func StartParseWorkers(pool *sync.WaitGroup, RawChan chan []byte, ParsedChan chan *ParsedQuote, DeadChan chan []byte, workerNum int) {
 	for i := 0; i < workerNum; i++ {
 		pool.Add(1)
 		go func() {
@@ -133,7 +114,7 @@ func StartParseWorkers(pool *sync.WaitGroup) {
 }
 
 // StartDBWorkers — 写库层
-func StartDBWorkers(db *gorm.DB, pool *sync.WaitGroup) {
+func StartDBWorkers(db *gorm.DB, pool *sync.WaitGroup, ParsedChan chan *ParsedQuote, workerNum int, batchSize int, flushDelay time.Duration) {
 	// 提前关掉自动事务和预编译
 	db = db.Session(&gorm.Session{SkipDefaultTransaction: true, PrepareStmt: true})
 
@@ -180,8 +161,8 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 	latestMap := make(map[string]*model.BondLatestQuote)
 
 	for _, pq := range batch {
-		meta := pq.Meta  // 外层
-		pd := pq.Payload // 内层
+		meta := pq.Meta       // 外层
+		payload := pq.Payload // 内层
 
 		// ASK / BID 明细
 		addDetail := func(q QuotePrice) {
@@ -193,7 +174,7 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 				MessageID:        meta.Data.MessageID,
 				MessageType:      meta.Data.MessageType,
 				Timestamp:        meta.Data.Timestamp,
-				ISIN:             pd.SecurityID,
+				ISIN:             payload.SecurityID,
 				BrokerID:         q.BrokerID,
 				Side:             q.Side,
 				Price:            q.Price,
@@ -209,45 +190,38 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 			})
 		}
 
-		for _, ask := range pd.AskPrices {
+		for _, ask := range payload.AskPrices {
 			addDetail(ask)
 		}
-		for _, bid := range pd.BidPrices {
+		for _, bid := range payload.BidPrices {
 			addDetail(bid)
 		}
 
-		// 最新价挑选（在同一批内取最优）
-		updateBest := func(q QuotePrice) {
-			lq, ok := latestMap[pd.SecurityID]
-			if !ok {
-				lq = &model.BondLatestQuote{ISIN: pd.SecurityID}
-				latestMap[pd.SecurityID] = lq
-			}
-			switch q.Side {
-			case "BID":
-				if lq.BidPrice == nil || q.Price > *lq.BidPrice {
-					price, qty, yld := q.Price, q.OrderQty, q.Yield
-					brokerID := q.BrokerID
-					qTime := time.UnixMilli(q.QuoteTime)
-					lq.BidPrice, lq.BidQty, lq.BidYield = &price, &qty, &yld
-					lq.BidBrokerID, lq.BidQuoteTime = &brokerID, &qTime
-				}
-			case "ASK":
-				if lq.AskPrice == nil || q.Price < *lq.AskPrice {
-					price, qty, yld := q.Price, q.OrderQty, q.Yield
-					brokerID := q.BrokerID
-					qTime := time.UnixMilli(q.QuoteTime)
-					lq.AskPrice, lq.AskQty, lq.AskYield = &price, &qty, &yld
-					lq.AskBrokerID, lq.AskQuoteTime = &brokerID, &qTime
-				}
-			}
-			lq.LastUpdateTime = time.Now()
+		// 最新价处理（基于消息发送时间比较）
+		sendTime := time.UnixMilli(meta.SendTime)
+
+		// 检查是否需要更新（基于SendTime）
+		lq, ok := latestMap[payload.SecurityID]
+		if !ok {
+			lq = &model.BondLatestQuote{ISIN: payload.SecurityID}
+			latestMap[payload.SecurityID] = lq
 		}
-		for _, ask := range pd.AskPrices {
-			updateBest(ask)
-		}
-		for _, bid := range pd.BidPrices {
-			updateBest(bid)
+
+		// 如果消息更新，则更新记录
+		shouldUpdate := lq.LastUpdateTime.IsZero() || sendTime.After(lq.LastUpdateTime)
+		if shouldUpdate {
+			// 将整个消息存储为JSON
+			rawJSON, err := json.Marshal(meta)
+			if err != nil {
+				return fmt.Errorf("marshal message to JSON: %w", err)
+			}
+
+			lq.RawJSON = string(rawJSON)
+			lq.MessageID = meta.Data.MessageID
+			lq.MessageType = meta.Data.MessageType
+			lq.SendTime = meta.SendTime
+			lq.Timestamp = meta.Data.Timestamp
+			lq.LastUpdateTime = sendTime
 		}
 	}
 
@@ -276,145 +250,4 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 		}
 		return nil
 	})
-}
-
-// ProcessMessage 处理推送消息
-func (s *BondQuoteService) ProcessMessage(messageBody []byte) error {
-	// 1. 解析外层JSON消息
-	var message BondQuoteMessage
-	if err := json.Unmarshal(messageBody, &message); err != nil {
-		return fmt.Errorf("解析消息失败: %w", err)
-	}
-
-	// 只处理债券行情消息
-	if message.WsMessageType != "ATS_QUOTE" {
-		return nil
-	}
-
-	// 2. 解析内部JSON字符串
-	var priceData QuotePriceData
-	if err := json.Unmarshal([]byte(message.Data.QuotePriceData), &priceData); err != nil {
-		return fmt.Errorf("解析报价数据失败: %w", err)
-	}
-
-	// 开启事务
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		// 3. 处理卖出报价(ASK)
-		for _, ask := range priceData.AskPrices {
-			if err := s.processQuoteDetail(tx, message, ask, priceData.SecurityID); err != nil {
-				return err
-			}
-		}
-
-		// 4. 处理买入报价(BID)
-		for _, bid := range priceData.BidPrices {
-			if err := s.processQuoteDetail(tx, message, bid, priceData.SecurityID); err != nil {
-				return err
-			}
-		}
-
-		// 5. 更新最新行情
-		if err := s.updateLatestQuote(tx, message, priceData); err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
-
-// 处理行情明细
-func (s *BondQuoteService) processQuoteDetail(tx *gorm.DB, message BondQuoteMessage, quote QuotePrice, securityID string) error {
-	// 转换报价时间（毫秒时间戳）
-	quoteTime := time.UnixMilli(quote.QuoteTime)
-
-	// 创建行情明细记录
-	yield := quote.Yield
-	minTransQty := quote.MinTransQuantity
-	detail := model.BondQuoteDetail{
-		MessageID:        message.Data.MessageID,
-		MessageType:      message.Data.MessageType,
-		Timestamp:        message.Data.Timestamp,
-		ISIN:             securityID,
-		BrokerID:         quote.BrokerID,
-		Side:             quote.Side,
-		Price:            quote.Price,
-		Yield:            &yield,
-		OrderQty:         quote.OrderQty,
-		MinTransQuantity: &minTransQty,
-		QuoteOrderNo:     quote.QuoteOrderNo,
-		QuoteTime:        quoteTime,
-		SettleType:       &quote.SettleType,
-		IsValid:          &quote.IsValid,
-		IsTbd:            &quote.IsTbd,
-	}
-
-	// 保存到数据库
-	return tx.Create(&detail).Error
-}
-
-// 更新最新行情
-func (s *BondQuoteService) updateLatestQuote(tx *gorm.DB, message BondQuoteMessage, priceData QuotePriceData) error {
-	securityID := priceData.SecurityID
-
-	// 查找最新买入和卖出报价
-	var bestBid, bestAsk *QuotePrice
-
-	// 找出最优买入价(价格最高的买入报价)
-	if len(priceData.BidPrices) > 0 {
-		bestBid = &priceData.BidPrices[0]
-		for i := range priceData.BidPrices {
-			if priceData.BidPrices[i].Price > bestBid.Price {
-				bestBid = &priceData.BidPrices[i]
-			}
-		}
-	}
-
-	// 找出最优卖出价(价格最低的卖出报价)
-	if len(priceData.AskPrices) > 0 {
-		bestAsk = &priceData.AskPrices[0]
-		for i := range priceData.AskPrices {
-			if priceData.AskPrices[i].Price < bestAsk.Price {
-				bestAsk = &priceData.AskPrices[i]
-			}
-		}
-	}
-
-	// 准备更新数据
-	latestQuote := model.BondLatestQuote{
-		ISIN:           securityID,
-		LastUpdateTime: time.Now(),
-	}
-
-	// 设置买入报价信息
-	if bestBid != nil {
-		bidQuoteTime := time.UnixMilli(bestBid.QuoteTime)
-		bidPrice := bestBid.Price
-		bidYield := bestBid.Yield
-		bidQty := bestBid.OrderQty
-		bidBrokerID := bestBid.BrokerID
-
-		latestQuote.BidPrice = &bidPrice
-		latestQuote.BidYield = &bidYield
-		latestQuote.BidQty = &bidQty
-		latestQuote.BidBrokerID = &bidBrokerID
-		latestQuote.BidQuoteTime = &bidQuoteTime
-	}
-
-	// 设置卖出报价信息
-	if bestAsk != nil {
-		askQuoteTime := time.UnixMilli(bestAsk.QuoteTime)
-		askPrice := bestAsk.Price
-		askYield := bestAsk.Yield
-		askQty := bestAsk.OrderQty
-		askBrokerID := bestAsk.BrokerID
-
-		latestQuote.AskPrice = &askPrice
-		latestQuote.AskYield = &askYield
-		latestQuote.AskQty = &askQty
-		latestQuote.AskBrokerID = &askBrokerID
-		latestQuote.AskQuoteTime = &askQuoteTime
-	}
-
-	// 使用Upsert操作(有则更新，无则插入)
-	return tx.Save(&latestQuote).Error
 }

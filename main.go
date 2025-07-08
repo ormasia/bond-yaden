@@ -27,10 +27,17 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"sync"
+	"test/model"
+	"test/service"
 	"time"
 
 	"github.com/go-stomp/stomp/v3"
 	"github.com/gorilla/websocket"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	_ "modernc.org/sqlite"
 
 	"github.com/google/uuid"
 )
@@ -44,6 +51,20 @@ const (
 	SMS_CODE   = "1234"
 	CLIENT_ID  = "30021"
 	PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB"
+)
+
+const (
+	rawCap     = 20000 // 原始 JSON 缓冲
+	parsedCap  = 4000  // 解析后缓冲
+	workerNum  = 8     // 解析/写库协程数
+	batchSize  = 300   // 单次批写条数
+	flushDelay = 100 * time.Millisecond
+)
+
+var (
+	RawChan    = make(chan []byte, rawCap)
+	ParsedChan = make(chan *service.ParsedQuote, parsedCap)
+	DeadChan   = make(chan []byte, 1000) // 解析失败
 )
 
 // LoginRequest 登录请求结构体
@@ -94,12 +115,54 @@ type StompClient struct {
 // 4. 订阅债券行情消息
 // 5. 持续监听消息推送
 func main() {
+
+	var db *gorm.DB
+	db, err := gorm.Open(sqlite.Dialector{
+		DriverName: "sqlite",
+		DSN:        "test.db",
+	}, &gorm.Config{})
+
+	if err != nil {
+		log.Fatal("数据库连接失败:", err)
+	}
+	// 自动建表
+	db.AutoMigrate(&model.BondQuoteDetail{}, &model.BondLatestQuote{})
+
+	// // 模拟输入 - 使用反引号包裹原始JSON字符串，避免转义问题
+	// rawjson := []byte(`{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007160488591361\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":92.413770,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142373,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":9.210692}],\"bidPrices\":[{\"brokerId\":\"1941007160488591360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}","messageId":"D1KNERRXUNB003EKWSWG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000096021","timestamp":1751607143910},"sendTime":1751607143922,"wsMessageType":"ATS_QUOTE"}`)
+
+	// // 本地测试：直接调用解析函数
+	// fmt.Println("开始本地测试解析...")
+	// parsed, err := service.ParseBondQuote(rawjson)
+	// if err != nil {
+	// 	fmt.Printf("解析失败: %v\n", err)
+	// } else {
+	// 	quoteCount := len(parsed.Payload.AskPrices) + len(parsed.Payload.BidPrices)
+	// 	fmt.Printf("解析成功: SecurityID=%s, QuoteCount=%d\n", parsed.Payload.SecurityID, quoteCount)
+	// 	// 解析成功: SecurityID=HK0000096021, QuoteCount=2
+	// 	// 消息详情: MessageID=D1KNERRXUNB003EKWSWG, MessageType=BOND_ORDER_BOOK_MSG, SendTime=1751607143922
+	// 	fmt.Printf("消息详情: MessageID=%s, MessageType=%s, SendTime=%d\n",
+	// 		parsed.Meta.Data.MessageID, parsed.Meta.Data.MessageType, parsed.Meta.SendTime)
+
+	// 	// 插入数据库测试
+	// 	if err := service.InsertBatch(db, []*service.ParsedQuote{parsed}); err != nil {
+	// 		fmt.Printf("数据库插入失败: %v\n", err)
+	// 	} else {
+	// 		fmt.Println("数据库插入成功")
+
+	// 		// 验证数据是否已插入
+	// 		var detailCount int64
+	// 		var latestCount int64
+	// 		db.Model(&model.BondQuoteDetail{}).Count(&detailCount)
+	// 		db.Model(&model.BondLatestQuote{}).Count(&latestCount)
+	// 		fmt.Printf("数据库验证: 明细表记录数=%d, 最新表记录数=%d\n", detailCount, latestCount)
+	// 	}
+	// }
+
 	fmt.Println("开始亚丁ATS系统测试...")
 
 	// 创建STOMP客户端实例
 	client := &StompClient{}
-	// 可以手动设置token进行测试（跳过登录步骤）
-	// client.token = "Lh8ksvjj7LAUYjCBUGDSQIVDx8LF707N"
 
 	// 第一步：用户登录获取访问令牌
 	// 使用加密通信协议，获取后续API调用所需的token
@@ -132,6 +195,11 @@ func main() {
 		log.Fatal("订阅失败:", err)
 	}
 
+	var wg sync.WaitGroup
+	// 第五步：启动后台处理工作协程
+	go service.StartParseWorkers(&wg, RawChan, ParsedChan, DeadChan, workerNum)
+	go service.StartDBWorkers(db, &wg, ParsedChan, workerNum, batchSize, flushDelay)
+
 	// 设置中断信号处理
 	// 监听Ctrl+C信号，优雅退出程序
 	interrupt := make(chan os.Signal, 1)
@@ -143,6 +211,15 @@ func main() {
 	// 阻塞等待中断信号
 	<-interrupt
 	fmt.Println("正在断开连接...")
+
+	// 优雅关闭：关闭 channels，等待 workers 完成
+	close(RawChan)
+	close(ParsedChan)
+	close(DeadChan)
+
+	// 现在等待所有 worker 完成清理工作
+	wg.Wait()
+	fmt.Println("所有后台任务已停止")
 }
 
 // 登录获取Token
@@ -366,6 +443,11 @@ func (c *StompClient) subscribe() error {
 				continue
 			}
 
+			// 将rawjson发送到RawChan通道
+			if len(msg.Body) != 0 {
+				RawChan <- msg.Body
+			}
+			// 打印收到的新消息
 			fmt.Println("\n========== 收到新消息 ==========")
 			fmt.Printf("时间: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 			fmt.Printf("目的地: %s\n", msg.Destination)

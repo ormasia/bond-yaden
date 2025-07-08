@@ -10,7 +10,7 @@ type BondQuoteDetail struct {
 	MessageID        string     `gorm:"column:message_id;not null;index" json:"messageId"`                       // 消息ID
 	MessageType      string     `gorm:"column:message_type;not null" json:"messageType"`                         // 消息类型
 	Timestamp        int64      `gorm:"column:timestamp;not null" json:"timestamp"`                              // 时间戳
-	ISIN             string     `gorm:"column:isin;not null;index" json:"securityCode"`                          // 债券代码
+	ISIN             string     `gorm:"column:isin;not null;index" json:"isin"`                                  // 债券代码
 	BrokerID         string     `gorm:"column:broker_id;not null" json:"brokerId"`                               // 券商ID
 	Side             string     `gorm:"column:side;not null" json:"side"`                                        // 方向(BID/ASK)
 	Price            float64    `gorm:"column:price;not null;type:decimal(18,6)" json:"price"`                   // 报价
@@ -33,20 +33,13 @@ func (BondQuoteDetail) TableName() string {
 
 // BondLatestQuote 债券最新行情表
 type BondLatestQuote struct {
-	ISIN           string     `gorm:"column:isin;primaryKey" json:"securityCode"`                                                          // 债券代码
-	LastUpdateTime time.Time  `gorm:"column:last_update_time;not null" json:"lastUpdateTime"`                                              // 最后更新时间
-	BidPrice       *float64   `gorm:"column:bid_price;type:decimal(18,6)" json:"bidPrice"`                                                 // 最优买入价
-	BidYield       *float64   `gorm:"column:bid_yield;type:decimal(18,6)" json:"bidYield"`                                                 // 买入收益率
-	BidQty         *float64   `gorm:"column:bid_qty;type:decimal(18,2)" json:"bidQty"`                                                     // 买入数量
-	BidBrokerID    *string    `gorm:"column:bid_broker_id" json:"bidBrokerId"`                                                             // 买入券商ID
-	BidQuoteTime   *time.Time `gorm:"column:bid_quote_time" json:"bidQuoteTime"`                                                           // 买入报价时间
-	AskPrice       *float64   `gorm:"column:ask_price;type:decimal(18,6)" json:"askPrice"`                                                 // 最优卖出价
-	AskYield       *float64   `gorm:"column:ask_yield;type:decimal(18,6)" json:"askYield"`                                                 // 卖出收益率
-	AskQty         *float64   `gorm:"column:ask_qty;type:decimal(18,2)" json:"askQty"`                                                     // 卖出数量
-	AskBrokerID    *string    `gorm:"column:ask_broker_id" json:"askBrokerId"`                                                             // 卖出券商ID
-	AskQuoteTime   *time.Time `gorm:"column:ask_quote_time" json:"askQuoteTime"`                                                           // 卖出报价时间
-	Spread         *float64   `gorm:"column:spread;type:decimal(18,6)" json:"spread"`                                                      // 买卖价差(计算列)
-	UpdateTime     time.Time  `gorm:"column:update_time;not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" json:"updateTime"` // 更新时间
+	ISIN           string    `gorm:"column:isin;primaryKey" json:"isin"`                                               // 债券代码
+	RawJSON        string    `gorm:"column:raw_json;type:text" json:"rawJson"`                                         // 存储完整消息JSON
+	MessageID      string    `gorm:"column:message_id;index" json:"messageId"`                                         // 消息ID，便于查询
+	MessageType    string    `gorm:"column:message_type" json:"messageType"`                                           // 消息类型
+	SendTime       int64     `gorm:"column:send_time;index" json:"sendTime"`                                           // 消息发送时间
+	Timestamp      int64     `gorm:"column:timestamp;index" json:"timestamp"`                                          // 业务时间戳
+	LastUpdateTime time.Time `gorm:"column:last_update_time;not null;default:CURRENT_TIMESTAMP" json:"lastUpdateTime"` // 最后更新时间
 }
 
 // TableName 设置表名
