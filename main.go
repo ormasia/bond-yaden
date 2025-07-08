@@ -131,8 +131,8 @@ func main() {
 	if err != nil {
 		log.Fatal("数据库连接失败:", err)
 	}
-	// 自动建表
-	db.AutoMigrate(&model.BondQuoteDetail{}, &model.BondLatestQuote{})
+	// 自动建表 - 只为BondLatestQuote创建表
+	db.AutoMigrate(&model.BondLatestQuote{})
 
 	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
 
