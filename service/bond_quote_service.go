@@ -17,6 +17,7 @@ import (
 // BondQuoteService 债券行情服务
 type BondQuoteService struct {
 	db         *gorm.DB
+	pool       *sync.WaitGroup
 	RawChan    chan []byte
 	ParsedChan chan *ParsedQuote
 	DeadChan   chan []byte
@@ -100,6 +101,27 @@ func ParseBondQuote(raw []byte) (*ParsedQuote, error) {
 }
 
 // StartParseWorkers — 解析层
+func (bqs *BondQuoteService) StartParseWorkers(workerNum int) {
+	for i := 0; i < workerNum; i++ {
+		bqs.pool.Add(1)
+		go func() {
+			defer bqs.pool.Done()
+			for raw := range bqs.RawChan {
+				pq, err := ParseBondQuote(raw)
+				switch {
+				// case err == service.ErrNotQuote:
+				// 	continue // 过滤非行情
+				case err != nil:
+					bqs.DeadChan <- raw
+					continue
+				}
+				bqs.ParsedChan <- pq
+			}
+		}()
+	}
+}
+
+// StartParseWorkers — 解析层
 func StartParseWorkers(pool *sync.WaitGroup, RawChan chan []byte, ParsedChan chan *ParsedQuote, DeadChan chan []byte, workerNum int) {
 	for i := 0; i < workerNum; i++ {
 		pool.Add(1)
@@ -115,6 +137,47 @@ func StartParseWorkers(pool *sync.WaitGroup, RawChan chan []byte, ParsedChan cha
 					continue
 				}
 				ParsedChan <- pq
+			}
+		}()
+	}
+}
+
+// StartDBWorkers — 写库层
+func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushDelay time.Duration) {
+	// 提前关掉自动事务和预编译
+	bqs.db = bqs.db.Session(&gorm.Session{SkipDefaultTransaction: true, PrepareStmt: true})
+
+	for i := 0; i < workerNum; i++ {
+		bqs.pool.Add(1)
+		go func() {
+			defer bqs.pool.Done()
+			ticker := time.NewTicker(flushDelay)
+			batch := make([]*ParsedQuote, 0, batchSize)
+
+			flush := func() {
+				if len(batch) == 0 {
+					return
+				}
+				if err := InsertBatch(bqs.db, batch); err != nil {
+					log.Printf("批量写库失败: %v", err)
+				}
+				batch = batch[:0]
+			}
+
+			for {
+				select {
+				case pq, ok := <-bqs.ParsedChan:
+					if !ok { // channel 关闭，写最后一批
+						flush()
+						return
+					}
+					batch = append(batch, pq)
+					if len(batch) >= batchSize {
+						flush()
+					}
+				case <-ticker.C:
+					flush()
+				}
 			}
 		}()
 	}

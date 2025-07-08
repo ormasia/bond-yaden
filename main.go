@@ -34,23 +34,13 @@ import (
 
 	"github.com/go-stomp/stomp/v3"
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	_ "modernc.org/sqlite"
 
 	"github.com/google/uuid"
-)
-
-// 亚丁ATS系统测试环境配置
-const (
-	Base_URL   = "https://adenapi.cstm.adenfin.com"
-	WSS_URL    = "wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws"
-	USERNAME   = "ATSTEST10001"
-	PASSWORD   = "Abc12345"
-	SMS_CODE   = "1234"
-	CLIENT_ID  = "30021"
-	PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB"
 )
 
 const (
@@ -62,6 +52,7 @@ const (
 )
 
 var (
+	wg         sync.WaitGroup
 	RawChan    = make(chan []byte, rawCap)
 	ParsedChan = make(chan *service.ParsedQuote, parsedCap)
 	DeadChan   = make(chan []byte, 1000) // 解析失败
@@ -115,6 +106,21 @@ type StompClient struct {
 // 4. 订阅债券行情消息
 // 5. 持续监听消息推送
 func main() {
+	// 加载.env文件
+
+	if err := godotenv.Load(); err != nil {
+		log.Printf("警告: 无法加载.env文件: %v", err)
+		log.Println("将使用系统环境变量")
+	}
+
+	// 获取环境变量，如果不存在则使用默认值
+	Base_URL := getEnv("BASE_URL", "https://adenapi.cstm.adenfin.com")
+	WSS_URL := getEnv("WSS_URL", "wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws")
+	USERNAME := getEnv("USERNAME", "ATSTEST10001")
+	PASSWORD := getEnv("PASSWORD", "Abc12345")
+	SMS_CODE := getEnv("SMS_CODE", "1234")
+	CLIENT_ID := getEnv("CLIENT_ID", "30021")
+	PUBLIC_KEY := getEnv("PUBLIC_KEY", "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB")
 
 	var db *gorm.DB
 	db, err := gorm.Open(sqlite.Dialector{
@@ -169,7 +175,7 @@ func main() {
 	// 第一步：用户登录获取访问令牌
 	// 使用加密通信协议，获取后续API调用所需的token
 	fmt.Println("第一步：登录获取Token...")
-	if err := client.login(); err != nil {
+	if err := client.login(USERNAME, PASSWORD, SMS_CODE, PUBLIC_KEY, Base_URL, CLIENT_ID); err != nil {
 		log.Fatal("登录失败:", err)
 	}
 	fmt.Printf("登录成功，获取到Token: %s\n", client.token[:20]+"...")
@@ -177,7 +183,7 @@ func main() {
 	// 第二步：建立WebSocket连接
 	// 使用获取的token建立安全的WebSocket连接
 	fmt.Println("第二步：建立WebSocket连接...")
-	if err := client.connectWebSocket(); err != nil {
+	if err := client.connectWebSocket(WSS_URL); err != nil {
 		log.Fatal("WebSocket连接失败:", err)
 	}
 	defer client.conn.Close() // 确保程序退出时关闭连接
@@ -197,10 +203,12 @@ func main() {
 		log.Fatal("订阅失败:", err)
 	}
 
-	var wg sync.WaitGroup
 	// 第五步：启动后台处理工作协程
-	go service.StartParseWorkers(&wg, RawChan, ParsedChan, DeadChan, workerNum)
-	go service.StartDBWorkers(db, &wg, ParsedChan, workerNum, batchSize, flushDelay)
+	bqs := service.NewBondQuoteService(db, RawChan, ParsedChan, DeadChan)
+	go bqs.StartParseWorkers(workerNum)
+	go bqs.StartDBWorkers(workerNum, batchSize, flushDelay)
+	// go service.StartParseWorkers(&wg, RawChan, ParsedChan, DeadChan, workerNum)
+	// go service.StartDBWorkers(db, &wg, ParsedChan, workerNum, batchSize, flushDelay)
 
 	// 设置中断信号处理
 	// 监听Ctrl+C信号，优雅退出程序
@@ -225,12 +233,12 @@ func main() {
 }
 
 // 登录获取Token
-func (c *StompClient) login() error {
+func (c *StompClient) login(username, password, smsCode, publicKey, baseURL, clientID string) error {
 	// 构建登录请求
 	loginReq := LoginRequest{
-		Username: USERNAME,
-		Password: PASSWORD,
-		SmsCode:  SMS_CODE,
+		Username: username,
+		Password: password,
+		SmsCode:  smsCode,
 	}
 
 	// 转换为JSON
@@ -239,8 +247,8 @@ func (c *StompClient) login() error {
 		return fmt.Errorf("JSON序列化失败: %v", err)
 	}
 
-	// 加密请求，
-	encryptedReq, err := encryptRequest(string(jsonData)) // *EncryptedRequest
+	// 加密请求
+	encryptedReq, err := encryptRequest(string(jsonData), publicKey, clientID)
 	if err != nil {
 		return fmt.Errorf("请求加密失败: %v", err)
 	}
@@ -253,7 +261,7 @@ func (c *StompClient) login() error {
 
 	// 构建登录API的完整URL
 	// 路径: /cust-gateway/cust-auth/account/outApi/doLogin
-	LOGIN_URL := fmt.Sprintf("%s%s", Base_URL, "/cust-gateway/cust-auth/account/outApi/doLogin")
+	LOGIN_URL := fmt.Sprintf("%s%s", baseURL, "/cust-gateway/cust-auth/account/outApi/doLogin")
 	fmt.Printf("发送登录请求到: %s\n", LOGIN_URL)
 
 	// 创建HTTP客户端，配置超时和TLS设置
@@ -284,7 +292,7 @@ func (c *StompClient) login() error {
 	var encryptedResp EncryptedResponse
 	json.Unmarshal(respBody, &encryptedResp)
 
-	pubKeyBytes, err := base64.StdEncoding.DecodeString(PUBLIC_KEY)
+	pubKeyBytes, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
 		return fmt.Errorf("公钥Base64解码失败: %v", err)
 	}
@@ -319,9 +327,9 @@ func (c *StompClient) login() error {
 }
 
 // 建立WebSocket连接
-func (c *StompClient) connectWebSocket() error {
+func (c *StompClient) connectWebSocket(wssURL string) error {
 	// 构建带token的URL
-	u, err := url.Parse(WSS_URL)
+	u, err := url.Parse(wssURL)
 	if err != nil {
 		return fmt.Errorf("解析URL失败: %v", err)
 	}
@@ -556,4 +564,13 @@ func (w *WebSocketNetConn) LocalAddr() net.Addr {
 
 func (w *WebSocketNetConn) RemoteAddr() net.Addr {
 	return w.conn.RemoteAddr()
+}
+
+// 添加一个辅助函数来获取环境变量，如果不存在则使用默认值
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

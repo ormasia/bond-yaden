@@ -195,9 +195,9 @@ func aesEncrypt(data string, secretBase64 string) (string, error) {
 //   - secretBase64: Base64编码的AES密钥字符串
 //
 // 返回：Base64编码的RSA加密结果
-func rsaEncrypt(secretBase64 string) (string, error) {
-	// 解析Base64编码的RSA公钥
-	pubKeyBytes, err := base64.StdEncoding.DecodeString(PUBLIC_KEY)
+func rsaEncrypt(plaintext, publicKey string) (string, error) {
+	// 解码Base64编码的公钥
+	pubKeyBytes, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
 		return "", fmt.Errorf("公钥Base64解码失败: %v", err)
 	}
@@ -216,7 +216,7 @@ func rsaEncrypt(secretBase64 string) (string, error) {
 
 	// 将Base64编码的AES密钥转换为字节数组
 	// 这里加密的是AES密钥的Base64字符串，而不是原始密钥字节
-	data := []byte(secretBase64)
+	data := []byte(plaintext)
 
 	// 使用RSA公钥加密，采用PKCS#1 v1.5填充方式
 	// 这是经典的RSA加密方式，兼容性好
@@ -239,7 +239,7 @@ func rsaEncrypt(secretBase64 string) (string, error) {
 //   - content: 待加密的请求内容（JSON字符串）
 //
 // 返回：加密后的请求结构体
-func encryptRequest(content string) (*EncryptedRequest, error) {
+func encryptRequest(content string, publicKey, clientID string) (*EncryptedRequest, error) {
 	// 第一步：生成随机AES密钥（Base64编码）
 	aesKey := generateAESKey()
 
@@ -252,15 +252,15 @@ func encryptRequest(content string) (*EncryptedRequest, error) {
 
 	// 第三步：使用RSA公钥加密AES密钥
 	// 确保AES密钥的安全传输
-	reqKey, err := rsaEncrypt(aesKey)
+	reqKey, err := rsaEncrypt(aesKey, publicKey)
 	if err != nil {
 		return nil, fmt.Errorf("RSA加密失败: %v", err)
 	}
 
 	// 第四步：组装加密请求结构
 	return &EncryptedRequest{
-		ReqMsg:   reqMsg,    // AES加密后的请求内容
-		ReqKey:   reqKey,    // RSA加密后的AES密钥
-		ClientId: CLIENT_ID, // 客户端标识符
+		ReqMsg:   reqMsg,   // AES加密后的请求内容
+		ReqKey:   reqKey,   // RSA加密后的AES密钥
+		ClientId: clientID, // 客户端标识符
 	}, nil
 }

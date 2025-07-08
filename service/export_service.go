@@ -42,7 +42,7 @@ func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string) {
 	go func() {
 		// 等待到下一个整点
 		// time.Sleep(initialDelay)
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		// 每小时执行一次导出
 		ticker := time.NewTicker(1 * time.Hour)
