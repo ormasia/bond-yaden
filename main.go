@@ -128,6 +128,8 @@ func main() {
 	// 自动建表
 	db.AutoMigrate(&model.BondQuoteDetail{}, &model.BondLatestQuote{})
 
+	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
+
 	// // 模拟输入 - 使用反引号包裹原始JSON字符串，避免转义问题
 	// rawjson := []byte(`{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007160488591361\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":92.413770,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142373,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":9.210692}],\"bidPrices\":[{\"brokerId\":\"1941007160488591360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}","messageId":"D1KNERRXUNB003EKWSWG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000096021","timestamp":1751607143910},"sendTime":1751607143922,"wsMessageType":"ATS_QUOTE"}`)
 

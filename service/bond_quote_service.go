@@ -14,15 +14,22 @@ import (
 	"test/model"
 )
 
-// // BondQuoteService 债券行情服务
-// type BondQuoteService struct {
-// 	db *gorm.DB
-// }
+// BondQuoteService 债券行情服务
+type BondQuoteService struct {
+	db         *gorm.DB
+	RawChan    chan []byte
+	ParsedChan chan *ParsedQuote
+	DeadChan   chan []byte
+}
 
-// // NewBondQuoteService 创建债券行情服务
-// func NewBondQuoteService(db *gorm.DB) *BondQuoteService {
-// 	return &BondQuoteService{db: db}
-// }
+// NewBondQuoteService 创建债券行情服务
+func NewBondQuoteService(db *gorm.DB, RawChan chan []byte, ParsedChan chan *ParsedQuote, DeadChan chan []byte) *BondQuoteService {
+	return &BondQuoteService{db: db,
+		RawChan:    RawChan,
+		ParsedChan: ParsedChan,
+		DeadChan:   DeadChan,
+	}
+}
 
 // 响应消息结构体
 type BondQuoteMessage struct {
