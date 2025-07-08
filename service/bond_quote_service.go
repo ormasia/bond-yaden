@@ -17,15 +17,17 @@ import (
 // BondQuoteService 债券行情服务
 type BondQuoteService struct {
 	db         *gorm.DB
-	pool       *sync.WaitGroup
+	wg         *sync.WaitGroup
 	RawChan    chan []byte
 	ParsedChan chan *ParsedQuote
 	DeadChan   chan []byte
 }
 
 // NewBondQuoteService 创建债券行情服务
-func NewBondQuoteService(db *gorm.DB, RawChan chan []byte, ParsedChan chan *ParsedQuote, DeadChan chan []byte) *BondQuoteService {
-	return &BondQuoteService{db: db,
+func NewBondQuoteService(db *gorm.DB, wg *sync.WaitGroup, RawChan chan []byte, ParsedChan chan *ParsedQuote, DeadChan chan []byte) *BondQuoteService {
+	return &BondQuoteService{
+		db:         db,
+		wg:         wg,
 		RawChan:    RawChan,
 		ParsedChan: ParsedChan,
 		DeadChan:   DeadChan,
@@ -103,9 +105,9 @@ func ParseBondQuote(raw []byte) (*ParsedQuote, error) {
 // StartParseWorkers — 解析层
 func (bqs *BondQuoteService) StartParseWorkers(workerNum int) {
 	for i := 0; i < workerNum; i++ {
-		bqs.pool.Add(1)
+		bqs.wg.Add(1)
 		go func() {
-			defer bqs.pool.Done()
+			defer bqs.wg.Done()
 			for raw := range bqs.RawChan {
 				pq, err := ParseBondQuote(raw)
 				switch {
@@ -148,9 +150,9 @@ func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushD
 	bqs.db = bqs.db.Session(&gorm.Session{SkipDefaultTransaction: true, PrepareStmt: true})
 
 	for i := 0; i < workerNum; i++ {
-		bqs.pool.Add(1)
+		bqs.wg.Add(1)
 		go func() {
-			defer bqs.pool.Done()
+			defer bqs.wg.Done()
 			ticker := time.NewTicker(flushDelay)
 			batch := make([]*ParsedQuote, 0, batchSize)
 

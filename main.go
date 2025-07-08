@@ -116,7 +116,7 @@ func main() {
 	// 获取环境变量，如果不存在则使用默认值
 	Base_URL := getEnv("BASE_URL", "https://adenapi.cstm.adenfin.com")
 	WSS_URL := getEnv("WSS_URL", "wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws")
-	USERNAME := getEnv("USERNAME", "ATSTEST10001")
+	USERNAME := "ATSTEST10001"
 	PASSWORD := getEnv("PASSWORD", "Abc12345")
 	SMS_CODE := getEnv("SMS_CODE", "1234")
 	CLIENT_ID := getEnv("CLIENT_ID", "30021")
@@ -204,7 +204,7 @@ func main() {
 	}
 
 	// 第五步：启动后台处理工作协程
-	bqs := service.NewBondQuoteService(db, RawChan, ParsedChan, DeadChan)
+	bqs := service.NewBondQuoteService(db, &wg, RawChan, ParsedChan, DeadChan)
 	go bqs.StartParseWorkers(workerNum)
 	go bqs.StartDBWorkers(workerNum, batchSize, flushDelay)
 	// go service.StartParseWorkers(&wg, RawChan, ParsedChan, DeadChan, workerNum)
