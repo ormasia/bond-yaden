@@ -226,8 +226,29 @@ func StartDBWorkers(db *gorm.DB, pool *sync.WaitGroup, ParsedChan chan *ParsedQu
 	}
 }
 
+// GetTodayTableName 获取当天表名
+func GetTodayDetailTableName() string {
+	// return fmt.Sprintf("t_bond_quote_detail_%s", time.Now().Format("20060102"))
+	return "t_bond_quote_detail"
+}
+
+func GetTodayLatestTableName() string {
+	// return fmt.Sprintf("t_bond_latest_quote_%s", time.Now().Format("20060102"))
+	return "t_bond_latest_quote"
+
+}
+
 // InsertBatch 把解析后的批次写入 DB
 func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
+	// 获取当天表名
+	detailName := GetTodayDetailTableName()
+	lastestName := GetTodayLatestTableName()
+
+	// // 确保表存在
+	// if err := EnsureTableExists(db, tableName); err != nil {
+	// 	return err
+	// }
+
 	// 1. 聚合
 	var details []model.BondQuoteDetail
 	latestMap := make(map[string]*model.BondLatestQuote)
@@ -299,9 +320,10 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 
 	// 2. 执行事务
 	return db.Transaction(func(tx *gorm.DB) error {
-		// 明细批量写
+		// 明细批量写 - 使用指定的表名
 		if len(details) > 0 {
-			if err := tx.CreateInBatches(details, 1000).Error; err != nil {
+			// 使用指定表名插入数据
+			if err := tx.Table(detailName).CreateInBatches(details, 1000).Error; err != nil {
 				return err
 			}
 		}
@@ -313,7 +335,7 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 				latestSlice = append(latestSlice, *v)
 			}
 
-			if err := tx.Clauses(clause.OnConflict{
+			if err := tx.Table(lastestName).Clauses(clause.OnConflict{
 				Columns:   []clause.Column{{Name: "isin"}}, // 唯一键
 				UpdateAll: true,
 			}).Create(&latestSlice).Error; err != nil {
