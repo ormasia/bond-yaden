@@ -1,3 +1,4 @@
 *.exe
 export/
 .env
+config/
