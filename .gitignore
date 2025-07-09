@@ -1,4 +1,4 @@
 *.exe
 export/
 .env
-config/
+config/sit*

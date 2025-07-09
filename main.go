@@ -205,8 +205,6 @@ func main() {
 	bqs := service.NewBondQuoteService(db, &wg, RawChan, ParsedChan, DeadChan)
 	go bqs.StartParseWorkers(workerNum)
 	go bqs.StartDBWorkers(workerNum, batchSize, flushDelay)
-	// go service.StartParseWorkers(&wg, RawChan, ParsedChan, DeadChan, workerNum)
-	// go service.StartDBWorkers(db, &wg, ParsedChan, workerNum, batchSize, flushDelay)
 
 	// 设置中断信号处理
 	// 监听Ctrl+C信号，优雅退出程序

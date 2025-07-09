@@ -123,26 +123,26 @@ func (bqs *BondQuoteService) StartParseWorkers(workerNum int) {
 	}
 }
 
-// StartParseWorkers — 解析层
-func StartParseWorkers(pool *sync.WaitGroup, RawChan chan []byte, ParsedChan chan *ParsedQuote, DeadChan chan []byte, workerNum int) {
-	for i := 0; i < workerNum; i++ {
-		pool.Add(1)
-		go func() {
-			defer pool.Done()
-			for raw := range RawChan {
-				pq, err := ParseBondQuote(raw)
-				switch {
-				// case err == service.ErrNotQuote:
-				// 	continue // 过滤非行情
-				case err != nil:
-					DeadChan <- raw
-					continue
-				}
-				ParsedChan <- pq
-			}
-		}()
-	}
-}
+// // StartParseWorkers — 解析层
+// func StartParseWorkers(pool *sync.WaitGroup, RawChan chan []byte, ParsedChan chan *ParsedQuote, DeadChan chan []byte, workerNum int) {
+// 	for i := 0; i < workerNum; i++ {
+// 		pool.Add(1)
+// 		go func() {
+// 			defer pool.Done()
+// 			for raw := range RawChan {
+// 				pq, err := ParseBondQuote(raw)
+// 				switch {
+// 				// case err == service.ErrNotQuote:
+// 				// 	continue // 过滤非行情
+// 				case err != nil:
+// 					DeadChan <- raw
+// 					continue
+// 				}
+// 				ParsedChan <- pq
+// 			}
+// 		}()
+// 	}
+// }
 
 // StartDBWorkers — 写库层
 func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushDelay time.Duration) {
@@ -185,46 +185,46 @@ func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushD
 	}
 }
 
-// StartDBWorkers — 写库层
-func StartDBWorkers(db *gorm.DB, pool *sync.WaitGroup, ParsedChan chan *ParsedQuote, workerNum int, batchSize int, flushDelay time.Duration) {
-	// 提前关掉自动事务和预编译
-	db = db.Session(&gorm.Session{SkipDefaultTransaction: true, PrepareStmt: true})
+// // StartDBWorkers — 写库层
+// func StartDBWorkers(db *gorm.DB, pool *sync.WaitGroup, ParsedChan chan *ParsedQuote, workerNum int, batchSize int, flushDelay time.Duration) {
+// 	// 提前关掉自动事务和预编译
+// 	db = db.Session(&gorm.Session{SkipDefaultTransaction: true, PrepareStmt: true})
 
-	for i := 0; i < workerNum; i++ {
-		pool.Add(1)
-		go func() {
-			defer pool.Done()
-			ticker := time.NewTicker(flushDelay)
-			batch := make([]*ParsedQuote, 0, batchSize)
+// 	for i := 0; i < workerNum; i++ {
+// 		pool.Add(1)
+// 		go func() {
+// 			defer pool.Done()
+// 			ticker := time.NewTicker(flushDelay)
+// 			batch := make([]*ParsedQuote, 0, batchSize)
 
-			flush := func() {
-				if len(batch) == 0 {
-					return
-				}
-				if err := InsertBatch(db, batch); err != nil {
-					log.Printf("批量写库失败: %v", err)
-				}
-				batch = batch[:0]
-			}
+// 			flush := func() {
+// 				if len(batch) == 0 {
+// 					return
+// 				}
+// 				if err := InsertBatch(db, batch); err != nil {
+// 					log.Printf("批量写库失败: %v", err)
+// 				}
+// 				batch = batch[:0]
+// 			}
 
-			for {
-				select {
-				case pq, ok := <-ParsedChan:
-					if !ok { // channel 关闭，写最后一批
-						flush()
-						return
-					}
-					batch = append(batch, pq)
-					if len(batch) >= batchSize {
-						flush()
-					}
-				case <-ticker.C:
-					flush()
-				}
-			}
-		}()
-	}
-}
+// 			for {
+// 				select {
+// 				case pq, ok := <-ParsedChan:
+// 					if !ok { // channel 关闭，写最后一批
+// 						flush()
+// 						return
+// 					}
+// 					batch = append(batch, pq)
+// 					if len(batch) >= batchSize {
+// 						flush()
+// 					}
+// 				case <-ticker.C:
+// 					flush()
+// 				}
+// 			}
+// 		}()
+// 	}
+// }
 
 // GetTodayTableName 获取当天表名
 func GetTodayDetailTableName() string {
