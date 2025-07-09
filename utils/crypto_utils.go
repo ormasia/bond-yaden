@@ -1,7 +1,7 @@
 // 加密解密工具包
 // 实现亚丁ATS系统的加密通信协议
 // 包含AES对称加密和RSA非对称加密的实现
-package main
+package utils
 
 import (
 	"bytes"
@@ -39,7 +39,7 @@ func pkcsUnpad(src []byte) ([]byte, error) {
 //   - key: AES解密密钥（16字节）
 //
 // 返回：解密后的明文数据
-func aesDecryptECB(b64 string, key []byte) ([]byte, error) {
+func AesDecryptECB(b64 string, key []byte) ([]byte, error) {
 	// Base64解码密文
 	cipherBytes, _ := base64.StdEncoding.DecodeString(b64)
 
@@ -65,7 +65,7 @@ func aesDecryptECB(b64 string, key []byte) ([]byte, error) {
 }
 
 // 公钥“解密”
-func rsaDecryptWithPub(pubPEM []byte, cipherB64 string) ([]byte, error) {
+func RsaDecryptWithPub(pubPEM []byte, cipherB64 string) ([]byte, error) {
 	var pub *rsa.PublicKey
 	var err error
 
@@ -154,7 +154,7 @@ func generateAESKey() string {
 //   - secretBase64: Base64编码的AES密钥
 //
 // 返回：Base64编码的密文
-func aesEncrypt(data string, secretBase64 string) (string, error) {
+func AesEncrypt(data string, secretBase64 string) (string, error) {
 	// 解码Base64编码的AES密钥
 	key, err := base64.StdEncoding.DecodeString(secretBase64)
 	if err != nil {
@@ -195,7 +195,7 @@ func aesEncrypt(data string, secretBase64 string) (string, error) {
 //   - secretBase64: Base64编码的AES密钥字符串
 //
 // 返回：Base64编码的RSA加密结果
-func rsaEncrypt(plaintext, publicKey string) (string, error) {
+func RsaEncrypt(plaintext, publicKey string) (string, error) {
 	// 解码Base64编码的公钥
 	pubKeyBytes, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
@@ -229,38 +229,29 @@ func rsaEncrypt(plaintext, publicKey string) (string, error) {
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
 
-// encryptRequest 加密请求函数
-// 实现亚丁ATS系统的混合加密方案：
-// 1. 生成随机AES密钥
-// 2. 用AES密钥加密请求内容
-// 3. 用RSA公钥加密AES密钥
-// 4. 组装成加密请求结构
-// 参数：
-//   - content: 待加密的请求内容（JSON字符串）
-//
-// 返回：加密后的请求结构体
-func encryptRequest(content string, publicKey, clientID string) (*EncryptedRequest, error) {
+func EncryptRequest(content string, publicKey, clientID string) (string, string, error) {
 	// 第一步：生成随机AES密钥（Base64编码）
 	aesKey := generateAESKey()
 
 	// 第二步：使用AES密钥加密请求内容
 	// 采用AES-ECB模式和PKCS#5填充
-	reqMsg, err := aesEncrypt(content, aesKey)
+	reqMsg, err := AesEncrypt(content, aesKey)
 	if err != nil {
-		return nil, fmt.Errorf("AES加密失败: %v", err)
+		return "", "", fmt.Errorf("AES加密失败: %v", err)
 	}
 
 	// 第三步：使用RSA公钥加密AES密钥
 	// 确保AES密钥的安全传输
-	reqKey, err := rsaEncrypt(aesKey, publicKey)
+	reqKey, err := RsaEncrypt(aesKey, publicKey)
 	if err != nil {
-		return nil, fmt.Errorf("RSA加密失败: %v", err)
+		return "", "", fmt.Errorf("RSA加密失败: %v", err)
 	}
 
 	// 第四步：组装加密请求结构
-	return &EncryptedRequest{
-		ReqMsg:   reqMsg,   // AES加密后的请求内容
-		ReqKey:   reqKey,   // RSA加密后的AES密钥
-		ClientId: clientID, // 客户端标识符
-	}, nil
+	// return &EncryptedRequest{
+	// 	ReqMsg:   reqMsg,   // AES加密后的请求内容
+	// 	ReqKey:   reqKey,   // RSA加密后的AES密钥
+	// 	ClientId: clientID, // 客户端标识符
+	// }, nil
+	return reqMsg, reqKey, nil
 }

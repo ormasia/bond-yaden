@@ -28,8 +28,8 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"test/model"
 	"test/service"
+	"test/utils"
 	"time"
 
 	"github.com/go-stomp/stomp/v3"
@@ -131,13 +131,9 @@ func main() {
 	if err != nil {
 		log.Fatal("数据库连接失败:", err)
 	}
-	// 自动建表 - 只为BondLatestQuote创建表
-	db.AutoMigrate(&model.BondLatestQuote{})
-
-	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
 
 	// // 模拟输入 - 使用反引号包裹原始JSON字符串，避免转义问题
-	// rawjson := []byte(`{"data":{"data":"{\"askPrices\":[{\"brokerId\":\"1941007160488591361\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":92.413770,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142373,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"ASK\",\"yield\":9.210692}],\"bidPrices\":[{\"brokerId\":\"1941007160488591360\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":12000000,\"price\":90.219085,\"quoteOrderNo\":\"D1KNERRXUNB003EKWSWG\",\"quoteTime\":1751607142244,\"securityId\":\"HK0000096021\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":10.936757}],\"securityId\":\"HK0000096021\"}","messageId":"D1KNERRXUNB003EKWSWG","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000096021","timestamp":1751607143910},"sendTime":1751607143922,"wsMessageType":"ATS_QUOTE"}`)
+	// rawjson := []byte(`{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}`)
 
 	// // 本地测试：直接调用解析函数
 	// fmt.Println("开始本地测试解析...")
@@ -166,6 +162,8 @@ func main() {
 	// 		fmt.Printf("数据库验证: 明细表记录数=%d, 最新表记录数=%d\n", detailCount, latestCount)
 	// 	}
 	// }
+
+	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
 
 	fmt.Println("开始亚丁ATS系统测试...")
 
@@ -248,10 +246,14 @@ func (c *StompClient) login(username, password, smsCode, publicKey, baseURL, cli
 	}
 
 	// 加密请求
-	encryptedReq, err := encryptRequest(string(jsonData), publicKey, clientID)
+	var encryptedReq EncryptedRequest
+	msg, key, err := utils.EncryptRequest(string(jsonData), publicKey, clientID)
 	if err != nil {
 		return fmt.Errorf("请求加密失败: %v", err)
 	}
+	encryptedReq.ReqMsg = msg
+	encryptedReq.ReqKey = key
+	encryptedReq.ClientId = clientID
 
 	// 发送HTTP请求
 	reqBody, err := json.Marshal(encryptedReq)
@@ -296,7 +298,7 @@ func (c *StompClient) login(username, password, smsCode, publicKey, baseURL, cli
 	if err != nil {
 		return fmt.Errorf("公钥Base64解码失败: %v", err)
 	}
-	aesKey, err := rsaDecryptWithPub(pubKeyBytes, encryptedResp.ResKey)
+	aesKey, err := utils.RsaDecryptWithPub(pubKeyBytes, encryptedResp.ResKey)
 	if err != nil {
 		return fmt.Errorf("RSA解密AES密钥失败: %v", err)
 	}
@@ -306,7 +308,7 @@ func (c *StompClient) login(username, password, smsCode, publicKey, baseURL, cli
 	if err != nil {
 		return fmt.Errorf("Base64解码AES密钥失败: %v", err)
 	}
-	decryptedResp, err := aesDecryptECB(encryptedResp.ResMsg, realAESKey)
+	decryptedResp, err := utils.AesDecryptECB(encryptedResp.ResMsg, realAESKey)
 	if err != nil {
 		return fmt.Errorf("AES解密响应失败: %v", err)
 	}

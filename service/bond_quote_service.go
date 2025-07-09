@@ -226,95 +226,28 @@ func StartDBWorkers(db *gorm.DB, pool *sync.WaitGroup, ParsedChan chan *ParsedQu
 	}
 }
 
-// 已创建表的缓存
-var createdTables = struct {
-	sync.RWMutex // 匿名嵌入：匿名嵌入结构体的成员变量和方法都可以直接通过外部结构体变量访问和调用。
-	tables       map[string]bool
-}{
-	tables: make(map[string]bool),
-}
-
 // GetTodayTableName 获取当天表名
-func GetTodayTableName() string {
-	return fmt.Sprintf("t_bond_quote_detail_%s", time.Now().Format("20060102"))
+func GetTodayDetailTableName() string {
+	// return fmt.Sprintf("t_bond_quote_detail_%s", time.Now().Format("20060102"))
+	return "t_bond_quote_detail"
 }
 
-// EnsureTableExists 确保表存在，如果不存在则创建
-func EnsureTableExists(db *gorm.DB, tableName string) error {
-	// 先检查缓存
-	createdTables.RLock()
-	exists := createdTables.tables[tableName]
-	createdTables.RUnlock()
+func GetTodayLatestTableName() string {
+	// return fmt.Sprintf("t_bond_latest_quote_%s", time.Now().Format("20060102"))
+	return "t_bond_latest_quote"
 
-	if exists {
-		return nil
-	}
-
-	// 缓存中不存在，检查数据库并创建
-	createdTables.Lock()
-	defer createdTables.Unlock()
-
-	// 双重检查，避免并发创建
-	if createdTables.tables[tableName] {
-		return nil
-	}
-
-	// 检查表是否存在
-	var count int64
-	err := db.Raw(fmt.Sprintf("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = '%s'", tableName)).Scan(&count).Error
-	if err != nil {
-		return fmt.Errorf("检查表是否存在失败: %w", err)
-	}
-
-	// 表已存在，记录到缓存
-	if count > 0 {
-		createdTables.tables[tableName] = true
-		return nil
-	}
-
-	// 创建表
-	sql := fmt.Sprintf(`CREATE TABLE %s (
-		id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
-		message_id VARCHAR(64) NOT NULL COMMENT '消息ID',
-		message_type VARCHAR(32) NOT NULL COMMENT '消息类型',
-		timestamp BIGINT NOT NULL COMMENT '时间戳',
-		isin VARCHAR(32) NOT NULL COMMENT '债券代码',
-		broker_id VARCHAR(32) NOT NULL COMMENT '券商ID',
-		side VARCHAR(8) NOT NULL COMMENT '方向(BID/ASK)',
-		price DECIMAL(18,6) NOT NULL COMMENT '报价',
-		yield DECIMAL(18,6) COMMENT '收益率',
-		order_qty DECIMAL(18,2) NOT NULL COMMENT '数量',
-		min_trans_quantity DECIMAL(18,2) COMMENT '最小交易量',
-		quote_order_no VARCHAR(64) NOT NULL COMMENT '报价单号',
-		quote_time DATETIME NOT NULL COMMENT '报价时间',
-		settle_type VARCHAR(16) COMMENT '结算类型',
-		is_valid CHAR(1) COMMENT '是否有效(Y/N)',
-		is_tbd CHAR(1) COMMENT '是否待定(Y/N)',
-		create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-		INDEX idx_isin (isin),
-		INDEX idx_quote_time (quote_time),
-		INDEX idx_message_id (message_id)
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='债券行情明细表-%s'`, tableName, time.Now().Format("20060102"))
-
-	if err := db.Exec(sql).Error; err != nil {
-		return fmt.Errorf("创建表失败: %w", err)
-	}
-
-	// 记录到缓存
-	createdTables.tables[tableName] = true
-	log.Printf("成功创建表: %s", tableName)
-	return nil
 }
 
 // InsertBatch 把解析后的批次写入 DB
 func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 	// 获取当天表名
-	tableName := GetTodayTableName()
+	detailName := GetTodayDetailTableName()
+	lastestName := GetTodayLatestTableName()
 
-	// 确保表存在
-	if err := EnsureTableExists(db, tableName); err != nil {
-		return err
-	}
+	// // 确保表存在
+	// if err := EnsureTableExists(db, tableName); err != nil {
+	// 	return err
+	// }
 
 	// 1. 聚合
 	var details []model.BondQuoteDetail
@@ -390,7 +323,7 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 		// 明细批量写 - 使用指定的表名
 		if len(details) > 0 {
 			// 使用指定表名插入数据
-			if err := tx.Table(tableName).CreateInBatches(details, 1000).Error; err != nil {
+			if err := tx.Table(detailName).CreateInBatches(details, 1000).Error; err != nil {
 				return err
 			}
 		}
@@ -402,7 +335,7 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 				latestSlice = append(latestSlice, *v)
 			}
 
-			if err := tx.Clauses(clause.OnConflict{
+			if err := tx.Table(lastestName).Clauses(clause.OnConflict{
 				Columns:   []clause.Column{{Name: "isin"}}, // 唯一键
 				UpdateAll: true,
 			}).Create(&latestSlice).Error; err != nil {
