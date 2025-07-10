@@ -6,6 +6,7 @@ import (
 	"test/model"
 	"time"
 
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -33,20 +34,46 @@ type TimeRangeParam struct {
 }
 
 // ExportDailyEndData 导出日终数据（从最新行情表）
-func (s *BondQueryService) ExportDailyEndData(param DateRangeParam) ([]map[string]any, error) {
+func (s *BondQueryService) ExportDailyEndData(param DateRangeParam) (string, error) {
 	// 解析日期
 	startDate, err := time.Parse("20060102", param.StartDate)
 	if err != nil {
-		return nil, fmt.Errorf("开始日期格式错误: %w", err)
+		return "", fmt.Errorf("开始日期格式错误: %w", err)
 	}
 
 	endDate, err := time.Parse("20060102", param.EndDate)
 	if err != nil {
-		return nil, fmt.Errorf("结束日期格式错误: %w", err)
+		return "", fmt.Errorf("结束日期格式错误: %w", err)
 	}
 
-	// 存储结果
-	var result []map[string]any
+	// 创建Excel文件
+	f := excelize.NewFile()
+	defer f.Close()
+
+	// 设置工作表名称
+	sheetName := "债券日终行情"
+	index, err := f.NewSheet(sheetName)
+	if err != nil {
+		return "", fmt.Errorf("创建工作表失败: %w", err)
+	}
+	f.SetActiveSheet(index)
+
+	// 设置表头
+	headers := []string{
+		"日期", "债券代码",
+		"买方价格", "买方收益率", "买方数量", "买方报价时间",
+		"卖方价格", "卖方收益率", "卖方数量", "卖方报价时间",
+		"消息ID", "消息类型", "发送时间", "时间戳", "更新时间",
+		"买方券商ID", "卖方券商ID",
+	}
+
+	for i, header := range headers {
+		cell := fmt.Sprintf("%c1", 'A'+i)
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	// 设置行索引
+	rowIndex := 2
 
 	// 遍历日期范围
 	for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
@@ -61,10 +88,10 @@ func (s *BondQueryService) ExportDailyEndData(param DateRangeParam) ([]map[strin
 		// 查询当天最新行情数据
 		var latestQuotes []model.BondLatestQuote
 		if err := s.db.Table(tableName).Find(&latestQuotes).Error; err != nil {
-			return nil, fmt.Errorf("查询%s数据失败: %w", dateStr, err)
+			return "", fmt.Errorf("查询%s数据失败: %w", dateStr, err)
 		}
 
-		// 处理每条数据
+		// 填充数据
 		for _, quote := range latestQuotes {
 			// 解析JSON数据
 			var msg BondQuoteMessage
@@ -78,32 +105,99 @@ func (s *BondQueryService) ExportDailyEndData(param DateRangeParam) ([]map[strin
 				continue
 			}
 
-			// 构造返回数据
-			data := map[string]any{
-				"date":           dateStr,
-				"bondCode":       quote.ISIN,
-				"messageID":      quote.MessageID,
-				"messageType":    quote.MessageType,
-				"sendTime":       time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"),
-				"timestamp":      time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"),
-				"lastUpdateTime": quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"),
-				"bidPrices":      payload.BidPrices,
-				"askPrices":      payload.AskPrices,
+			// 获取买方和卖方报价
+			var bidPrices []QuotePrice
+			var askPrices []QuotePrice
+
+			if len(payload.BidPrices) > 0 {
+				bidPrices = payload.BidPrices
 			}
 
-			result = append(result, data)
+			if len(payload.AskPrices) > 0 {
+				askPrices = payload.AskPrices
+			}
+
+			// 确定需要多少行
+			maxRows := len(bidPrices)
+			if len(askPrices) > maxRows {
+				maxRows = len(askPrices)
+			}
+
+			// 如果没有任何报价，至少创建一行基本信息
+			if maxRows == 0 {
+				// 日期和债券代码
+				f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), dateStr)
+				f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), quote.ISIN)
+
+				// 消息元数据
+				f.SetCellValue(sheetName, fmt.Sprintf("K%d", rowIndex), quote.MessageID)
+				f.SetCellValue(sheetName, fmt.Sprintf("L%d", rowIndex), quote.MessageType)
+				f.SetCellValue(sheetName, fmt.Sprintf("M%d", rowIndex), time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"))
+				f.SetCellValue(sheetName, fmt.Sprintf("N%d", rowIndex), time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"))
+				f.SetCellValue(sheetName, fmt.Sprintf("O%d", rowIndex), quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"))
+				rowIndex++
+				continue
+			}
+
+			// 填充每一行数据
+			for i := 0; i < maxRows; i++ {
+				// 日期和债券代码
+				f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), dateStr)
+				f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), quote.ISIN)
+
+				// 买方数据
+				if i < len(bidPrices) {
+					bid := bidPrices[i]
+					f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIndex), bid.Price)
+					f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIndex), bid.Yield)
+					f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIndex), bid.OrderQty)
+					f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIndex), time.UnixMilli(bid.QuoteTime).Format("2006-01-02 15:04:05.000"))
+					f.SetCellValue(sheetName, fmt.Sprintf("P%d", rowIndex), bid.BrokerID)
+				}
+
+				// 卖方数据
+				if i < len(askPrices) {
+					ask := askPrices[i]
+					f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIndex), ask.Price)
+					f.SetCellValue(sheetName, fmt.Sprintf("H%d", rowIndex), ask.Yield)
+					f.SetCellValue(sheetName, fmt.Sprintf("I%d", rowIndex), ask.OrderQty)
+					f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIndex), time.UnixMilli(ask.QuoteTime).Format("2006-01-02 15:04:05.000"))
+					f.SetCellValue(sheetName, fmt.Sprintf("Q%d", rowIndex), ask.BrokerID)
+				}
+
+				// 消息元数据
+				f.SetCellValue(sheetName, fmt.Sprintf("K%d", rowIndex), quote.MessageID)
+				f.SetCellValue(sheetName, fmt.Sprintf("L%d", rowIndex), quote.MessageType)
+				f.SetCellValue(sheetName, fmt.Sprintf("M%d", rowIndex), time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"))
+				f.SetCellValue(sheetName, fmt.Sprintf("N%d", rowIndex), time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"))
+				f.SetCellValue(sheetName, fmt.Sprintf("O%d", rowIndex), quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"))
+
+				rowIndex++
+			}
 		}
 	}
 
-	return result, nil
+	// 设置列宽
+	for i := 0; i < len(headers); i++ {
+		colName := fmt.Sprint('A' + i)
+		f.SetColWidth(sheetName, colName, colName, 18)
+	}
+
+	// 保存文件
+	filename := fmt.Sprintf("bond_daily_end_data_%s_to_%s.xlsx", param.StartDate, param.EndDate)
+	if err := f.SaveAs(filename); err != nil {
+		return "", fmt.Errorf("保存Excel文件失败: %w", err)
+	}
+
+	return filename, nil
 }
 
 // ExportTimeRangeData 导出时间段数据（从明细表）
-func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) ([]map[string]any, error) {
+func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) (string, error) {
 	// 解析日期和时间
 	date, err := time.Parse("20060102", param.Date)
 	if err != nil {
-		return nil, fmt.Errorf("日期格式错误: %w", err)
+		return "", fmt.Errorf("日期格式错误: %w", err)
 	}
 
 	dateStr := date.Format("20060102")
@@ -111,18 +205,18 @@ func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) ([]map[stri
 
 	// 检查表是否存在
 	if !s.tableExists(tableName) {
-		return nil, fmt.Errorf("表%s不存在", tableName)
+		return "", fmt.Errorf("表%s不存在", tableName)
 	}
 
 	// 构建时间范围
 	startDateTime, err := time.Parse("20060102 15:04:05", fmt.Sprintf("%s %s", dateStr, param.StartTime))
 	if err != nil {
-		return nil, fmt.Errorf("开始时间格式错误: %w", err)
+		return "", fmt.Errorf("开始时间格式错误: %w", err)
 	}
 
 	endDateTime, err := time.Parse("20060102 15:04:05", fmt.Sprintf("%s %s", dateStr, param.EndTime))
 	if err != nil {
-		return nil, fmt.Errorf("结束时间格式错误: %w", err)
+		return "", fmt.Errorf("结束时间格式错误: %w", err)
 	}
 
 	// 查询指定时间段的明细数据
@@ -131,28 +225,64 @@ func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) ([]map[stri
 		Where("quote_time BETWEEN ? AND ?", startDateTime, endDateTime).
 		Order("quote_time").
 		Find(&details).Error; err != nil {
-		return nil, fmt.Errorf("查询时间段数据失败: %w", err)
+		return "", fmt.Errorf("查询时间段数据失败: %w", err)
 	}
 
-	// 构造返回数据
-	var result []map[string]any
-	for _, detail := range details {
-		data := map[string]any{
-			"bondCode":    detail.ISIN,
-			"side":        detail.Side,
-			"price":       detail.Price,
-			"yield":       detail.Yield,
-			"orderQty":    detail.OrderQty,
-			"quoteTime":   detail.QuoteTime.Format("2006-01-02 15:04:05.000"),
-			"brokerID":    detail.BrokerID,
-			"messageID":   detail.MessageID,
-			"messageType": detail.MessageType,
-			"timestamp":   time.UnixMilli(detail.Timestamp).Format("2006-01-02 15:04:05.000"),
+	// 创建Excel文件
+	f := excelize.NewFile()
+	defer f.Close()
+
+	// 设置工作表名称
+	sheetName := "债券时间段行情"
+	index, err := f.NewSheet(sheetName)
+	if err != nil {
+		return "", fmt.Errorf("创建工作表失败: %w", err)
+	}
+	f.SetActiveSheet(index)
+
+	// 设置表头
+	headers := []string{
+		"债券代码", "报价方向", "价格", "收益率", "数量", "报价时间",
+		"券商ID", "消息ID", "消息类型", "发送时间", "时间戳",
+	}
+
+	for i, header := range headers {
+		cell := fmt.Sprintf("%c1", 'A'+i)
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	// 填充数据
+	for i, detail := range details {
+		rowIndex := i + 2 // 从第2行开始（第1行是表头）
+
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), detail.ISIN)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), detail.Side)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIndex), detail.Price)
+		if detail.Yield != nil {
+			f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIndex), *detail.Yield)
 		}
-		result = append(result, data)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIndex), detail.OrderQty)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIndex), detail.QuoteTime.Format("2006-01-02 15:04:05.000"))
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIndex), detail.BrokerID)
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", rowIndex), detail.MessageID)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", rowIndex), detail.MessageType)
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIndex), time.UnixMilli(detail.Timestamp).Format("2006-01-02 15:04:05.000"))
 	}
 
-	return result, nil
+	// 设置列宽
+	for i := 0; i < len(headers); i++ {
+		colName := fmt.Sprint('A' + i)
+		f.SetColWidth(sheetName, colName, colName, 18)
+	}
+
+	// 保存文件
+	filename := fmt.Sprintf("bond_time_range_data_%s_%s_to_%s.xlsx",
+		param.Date, param.StartTime, param.EndTime)
+	if err := f.SaveAs(filename); err != nil {
+		return "", fmt.Errorf("保存Excel文件失败: %w", err)
+	}
+
+	return filename, nil
 }
 
 // 检查表是否存在

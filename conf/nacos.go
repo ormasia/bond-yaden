@@ -32,13 +32,16 @@ const (
 var NacosKeys = map[string]string{
 	"apm": "apm-endpoint@@public@@",
 
-	"mysql.fund":   "cipher-mysql-funddb-ro@@mkt@@mkt",
-	"mysql.symbol": "cipher-mysql-symboldb-ro@@mkt@@mkt",
-	"mysql.bond":   "cipher-mysql-bonddb-ro@@mkt@@mkt",
-	"mysql.amount": "cipher-mysql-amountdb-rw@@mkt@@mkt",
-	"mysql.public": "cipher-mysql-publicdb-ro@@mkt@@mkt",
-	"mysql.forex":  "cipher-mysql-forexdb-ro@@mkt@@mkt",
+	// MySQL数据库配置
+	"mysql.fund":      "cipher-mysql-funddb-ro@@mkt@@mkt",
+	"mysql.symbol":    "cipher-mysql-symboldb-ro@@mkt@@mkt",
+	"mysql.bond":      "cipher-mysql-bonddb-ro@@mkt@@mkt",
+	"mysql.amount":    "cipher-mysql-amountdb-rw@@mkt@@mkt",
+	"mysql.public":    "cipher-mysql-publicdb-ro@@mkt@@mkt",
+	"mysql.forex":     "cipher-mysql-forexdb-ro@@mkt@@mkt",
+	"mysql.bondQuote": "cipher-mysql-bondquote-rw@@mkt@@mkt", // 债券行情数据库
 
+	// MongoDB数据库配置
 	"mongo.wealthmanagedb":   "cipher-mongo-wealthmanage-rw@@mkt@@mkt",
 	"mongo.wealthmanagedb_r": "cipher-mongo-wealthmanage-ro@@mkt@@mkt",
 }

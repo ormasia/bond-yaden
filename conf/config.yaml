@@ -11,18 +11,6 @@ log:
   size: 1073741824
   count: 10
 
-# 数据库配置
-mysql:
-  bondQuote:
-    host: "localhost"
-    port: 3306
-    user: "root"
-    password: "password"
-    schema: "bond_quote_db"
-    maxIdleConn: 5
-    maxOpenConn: 20
-    connMaxLifetime: 300 # 秒
-
 # 亚丁ATS系统配置
 adenATS:
   baseURL: "https://adenapi.cstm.adenfin.com"
@@ -32,24 +20,31 @@ adenATS:
   smsCode: "1234"
   clientId: "30021"
   publicKey: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB"
+  # 连接配置
+  timeout: 30 # 连接超时时间（秒）
+  heartbeat: 20000 # 心跳间隔（毫秒）
+  reconnectInterval: 5000 # 重连间隔（毫秒）
+  maxReconnectAttempts: 10 # 最大重连次数
 
 # 数据处理配置
 dataProcess:
-  rawBufferSize: 20000
-  parsedBufferSize: 4000
-  workerNum: 8
-  batchSize: 300
-  flushDelayMs: 100
+  # 缓冲区配置
+  rawBufferSize: 20000    # 原始数据缓冲区大小
+  parsedBufferSize: 4000  # 解析后数据缓冲区大小
+  deadBufferSize: 1000    # 死信队列缓冲区大小
+  # 工作线程配置
+  workerNum: 8            # 数据处理工作线程数
+  parserWorkerNum: 4      # 数据解析工作线程数
+  dbWorkerNum: 2          # 数据库写入工作线程数
+  # 批处理配置
+  batchSize: 300          # 批处理大小
+  flushDelayMs: 100       # 刷新延迟（毫秒）
+  # 数据清理配置
+  dataRetentionDays: 30   # 数据保留天数
+  cleanupIntervalHours: 24 # 清理任务执行间隔（小时）
 
 # 文件导出配置
 export:
   path: "/data/export/bond_quote"
   urlPrefix: "http://localhost:8081/export"
   retentionDays: 7
-
-# Fiber服务器配置
-fiber:
-  port: 8080
-  readTimeout: 10
-  writeTimeout: 30
-  idleTimeout: 120

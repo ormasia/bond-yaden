@@ -46,8 +46,8 @@ func (h *QueryHandler) ExportDailyEndData(c *fiber.Ctx) error {
 		})
 	}
 
-	// 获取数据
-	data, err := h.queryService.ExportDailyEndData(param)
+	// 导出数据
+	filename, err := h.queryService.ExportDailyEndData(param)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"code": 500,
@@ -55,11 +55,13 @@ func (h *QueryHandler) ExportDailyEndData(c *fiber.Ctx) error {
 		})
 	}
 
-	// 返回 JSON 数据
+	// 返回文件路径
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"code": 200,
 		"msg":  "导出成功",
-		"data": data,
+		"data": fiber.Map{
+			"filename": filename,
+		},
 	})
 }
 
@@ -81,8 +83,8 @@ func (h *QueryHandler) ExportTimeRangeData(c *fiber.Ctx) error {
 		})
 	}
 
-	// 获取数据
-	data, err := h.queryService.ExportTimeRangeData(param)
+	// 导出数据
+	filename, err := h.queryService.ExportTimeRangeData(param)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"code": 500,
@@ -90,10 +92,25 @@ func (h *QueryHandler) ExportTimeRangeData(c *fiber.Ctx) error {
 		})
 	}
 
-	// 返回 JSON 数据
+	// 返回文件路径
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"code": 200,
 		"msg":  "导出成功",
-		"data": data,
+		"data": fiber.Map{
+			"filename": filename,
+		},
 	})
+}
+
+// DownloadFile 下载文件
+func (h *QueryHandler) DownloadFile(c *fiber.Ctx) error {
+	filename := c.Params("filename")
+	if filename == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"code": 400,
+			"msg":  "文件名不能为空",
+		})
+	}
+
+	return c.Download(filename)
 }
