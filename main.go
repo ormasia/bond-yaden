@@ -133,7 +133,7 @@ func main() {
 	}
 
 	// // 模拟输入 - 使用反引号包裹原始JSON字符串，避免转义问题
-	// rawjson := []byte(`{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}`)
+	rawjson := []byte(`{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}`)
 
 	// // 本地测试：直接调用解析函数
 	// fmt.Println("开始本地测试解析...")
@@ -162,8 +162,8 @@ func main() {
 	// 		fmt.Printf("数据库验证: 明细表记录数=%d, 最新表记录数=%d\n", detailCount, latestCount)
 	// 	}
 	// }
-
-	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
+	RawChan <- rawjson
+	// service.NewExportLatestQuotesService(db).StartHourlyExport("export")
 
 	fmt.Println("开始亚丁ATS系统测试...")
 
