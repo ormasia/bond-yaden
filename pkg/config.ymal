@@ -6,38 +6,22 @@ app: # RESTful
   prefork: false
 
 log:
-  path: "/data/logs/wealth-data-service/wealth-data-service.log"
+  path: "/data/logs/wealth-bond-quote-service/wealth-bond-quote-service.log"
   level: "debug"
   size: 1073741824
   count: 10
 
+# 数据库配置
 mysql:
-  fund:
-    host: "10.36.0.86"
+  bondQuote:
+    host: "localhost"
     port: 3306
-    password: QcXpaoKzN4AFGJ7MjxDv
-    schema: funddb
-    user: "hq_ro"
-
-# 债券行情数据库配置
-bondQuoteDB:
-  host: "localhost"
-  port: 3306
-  user: "root"
-  password: "password"
-  schema: "bond_quote_db"
-  maxIdleConn: 5
-  maxOpenConn: 20
-  connMaxLifetime: 300 # 秒
-
-# 文件导出配置
-export:
-  # 导出文件存储路径
-  path: "/data/export/bond_quote"
-  # 文件下载URL前缀
-  urlPrefix: "http://localhost:8081/download"
-  # 文件保留天数
-  retentionDays: 7
+    user: "root"
+    password: "password"
+    schema: "bond_quote_db"
+    maxIdleConn: 5
+    maxOpenConn: 20
+    connMaxLifetime: 300 # 秒
 
 # 亚丁ATS系统配置
 adenATS:
@@ -49,22 +33,23 @@ adenATS:
   clientId: "30021"
   publicKey: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB"
 
-# HTTP服务器配置
-http:
-  port: 8080
-  readTimeout: 10 # 秒
-  writeTimeout: 30 # 秒
-  idleTimeout: 120 # 秒
-
 # 数据处理配置
 dataProcess:
-  # 原始JSON缓冲区大小
   rawBufferSize: 20000
-  # 解析后数据缓冲区大小
   parsedBufferSize: 4000
-  # 处理工作协程数
   workerNum: 8
-  # 批处理大小
   batchSize: 300
-  # 刷新延迟(毫秒)
   flushDelayMs: 100
+
+# 文件导出配置
+export:
+  path: "/data/export/bond_quote"
+  urlPrefix: "http://localhost:8081/export"
+  retentionDays: 7
+
+# Fiber服务器配置
+fiber:
+  port: 8080
+  readTimeout: 10
+  writeTimeout: 30
+  idleTimeout: 120
