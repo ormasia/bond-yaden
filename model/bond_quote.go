@@ -26,9 +26,15 @@ type BondQuoteDetail struct {
 	CreateTime       time.Time  `gorm:"column:create_time;not null;default:CURRENT_TIMESTAMP" json:"createTime"` // 创建时间
 }
 
+// TableName 设置表名
+func (BondQuoteDetail) TableName() string {
+	return "t_bond_quote_detail"
+}
+
 // // TableName 设置表名
 // func (BondQuoteDetail) TableName() string {
-// 	return "t_bond_quote_detail"
+// 	datestr := time.Now().Format("20060102")
+// 	return fmt.Sprintf("t_bond_quote_detail_%s", datestr)
 // }
 
 // BondLatestQuote 债券最新行情表
@@ -42,7 +48,13 @@ type BondLatestQuote struct {
 	LastUpdateTime time.Time `gorm:"column:last_update_time;not null;default:CURRENT_TIMESTAMP" json:"lastUpdateTime"` // 最后更新时间
 }
 
+// TableName 设置表名
+func (BondLatestQuote) TableName() string {
+	return "t_bond_latest_quote"
+}
+
 // // TableName 设置表名
 // func (BondLatestQuote) TableName() string {
-// 	return "t_bond_latest_quote"
+// 	datestr := time.Now().Format("20060102")
+// 	return fmt.Sprintf("t_bond_latest_quote_%s", datestr)
 // }

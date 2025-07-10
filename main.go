@@ -163,7 +163,7 @@ func main() {
 	// 	}
 	// }
 	RawChan <- rawjson
-	// service.NewExportLatestQuotesService(db).StartHourlyExport("export")
+	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
 
 	fmt.Println("开始亚丁ATS系统测试...")
 
