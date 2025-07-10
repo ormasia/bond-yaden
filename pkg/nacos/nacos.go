@@ -16,15 +16,15 @@ import (
 // 管理多个命名空间的 Nacos 配置客户端连接
 type NacosCli struct {
 	NacosCliMap map[string]config_client.IConfigClient // 命名空间到客户端的映射，实现连接复用
-	CacheLogDir string                                  // 缓存日志目录路径
-	LogDir      string                                  // 日志文件目录路径
-	LogLvl      string                                  // 日志级别（debug/info/warn/error）
-	lock        sync.Mutex                              // 互斥锁，保护并发访问客户端映射
-	addr        string                                  // Nacos 服务器地址
-	port        int32                                   // Nacos 服务器端口
-	accessKey   string                                  // KMS 访问密钥（用于配置加密）
-	secretKey   string                                  // KMS 秘密密钥（用于配置加密）
-	region      string                                  // 区域标识符
+	CacheLogDir string                                 // 缓存日志目录路径
+	LogDir      string                                 // 日志文件目录路径
+	LogLvl      string                                 // 日志级别（debug/info/warn/error）
+	lock        sync.Mutex                             // 互斥锁，保护并发访问客户端映射
+	addr        string                                 // Nacos 服务器地址
+	port        int32                                  // Nacos 服务器端口
+	accessKey   string                                 // KMS 访问密钥（用于配置加密）
+	secretKey   string                                 // KMS 秘密密钥（用于配置加密）
+	region      string                                 // 区域标识符
 }
 
 // NacosCliOption 配置选项函数类型
@@ -126,26 +126,26 @@ func WithKmsSK(sk string) NacosCliOption {
 func (c *NacosCli) getNacosCli(ns string) (config_client.IConfigClient, error) {
 	c.lock.Lock()         // 加锁保护并发访问
 	defer c.lock.Unlock() // 函数结束时解锁
-	
+
 	// 检查是否已存在该命名空间的客户端连接
 	if cli, ok := c.NacosCliMap[ns]; ok {
 		return cli, nil
 	}
-	
+
 	// 创建客户端配置
 	cc := *constant.NewClientConfig(
-		constant.WithTimeoutMs(5000),              // 设置超时时间为 5 秒
-		constant.WithNamespaceId(ns),              // 设置命名空间 ID
-		constant.WithOpenKMS(true),                // 启用 KMS 加密
-		constant.WithRegionId(c.region),           // 设置区域 ID
-		constant.WithSecretKey(c.secretKey),       // 设置 KMS 秘密密钥
-		constant.WithAccessKey(c.accessKey),       // 设置 KMS 访问密钥
-		constant.WithNotLoadCacheAtStart(true),    // 启动时不加载缓存
-		constant.WithLogDir(c.LogDir),             // 设置日志目录
-		constant.WithCacheDir(c.CacheLogDir),      // 设置缓存目录
-		constant.WithLogLevel(c.LogLvl),           // 设置日志级别
+		constant.WithTimeoutMs(5000),           // 设置超时时间为 5 秒
+		constant.WithNamespaceId(ns),           // 设置命名空间 ID
+		constant.WithOpenKMS(true),             // 启用 KMS 加密
+		constant.WithRegionId(c.region),        // 设置区域 ID
+		constant.WithSecretKey(c.secretKey),    // 设置 KMS 秘密密钥
+		constant.WithAccessKey(c.accessKey),    // 设置 KMS 访问密钥
+		constant.WithNotLoadCacheAtStart(true), // 启动时不加载缓存
+		constant.WithLogDir(c.LogDir),          // 设置日志目录
+		constant.WithCacheDir(c.CacheLogDir),   // 设置缓存目录
+		constant.WithLogLevel(c.LogLvl),        // 设置日志级别
 	)
-	
+
 	// 创建服务器配置
 	sc := []constant.ServerConfig{
 		{
@@ -153,7 +153,7 @@ func (c *NacosCli) getNacosCli(ns string) (config_client.IConfigClient, error) {
 			Port:   uint64(c.port), // Nacos 服务器端口
 		},
 	}
-	
+
 	// 创建 Nacos 配置客户端
 	nacosCli, err := clients.NewConfigClient(
 		vo.NacosClientParam{
@@ -165,7 +165,7 @@ func (c *NacosCli) getNacosCli(ns string) (config_client.IConfigClient, error) {
 		fmt.Println("init nacos client error:", err)
 		return nil, err
 	}
-	
+
 	// 缓存客户端连接以供后续使用
 	c.NacosCliMap[ns] = nacosCli
 	return nacosCli, nil
@@ -183,7 +183,7 @@ func (c *NacosCli) GetCfgFromNacos(id, group, ns string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// 从 Nacos 获取配置内容
 	return cli.GetConfig(vo.ConfigParam{
 		Group:  group, // 配置分组
