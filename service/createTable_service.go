@@ -28,14 +28,18 @@ func (s *createTableService) CreateTables(date time.Time) error {
 		detailTable := fmt.Sprintf("t_bond_quote_detail_%s", dateStr)
 		latestTable := fmt.Sprintf("t_bond_latest_quote_%s", dateStr)
 
-		// 创建明细表
-		if err := s.db.Exec("CREATE TABLE IF NOT EXISTS " + detailTable + " LIKE t_bond_quote_detail").Error; err != nil {
-			return fmt.Errorf("创建明细表失败 %s: %w", detailTable, err)
+		// 检查并创建明细表
+		if !s.db.Migrator().HasTable(detailTable) {
+			if err := s.db.Table(detailTable).AutoMigrate(&model.BondQuoteDetail{}); err != nil {
+				return fmt.Errorf("创建明细表失败 %s: %w", detailTable, err)
+			}
 		}
 
-		// 创建最新行情表
-		if err := s.db.Exec("CREATE TABLE IF NOT EXISTS " + latestTable + " LIKE t_bond_latest_quote").Error; err != nil {
-			return fmt.Errorf("创建最新行情表失败 %s: %w", latestTable, err)
+		// 检查并创建最新行情表
+		if !s.db.Migrator().HasTable(latestTable) {
+			if err := s.db.Table(latestTable).AutoMigrate(&model.BondLatestQuote{}); err != nil {
+				return fmt.Errorf("创建最新行情表失败 %s: %w", latestTable, err)
+			}
 		}
 
 		log.Printf("成功创建表: %s, %s", detailTable, latestTable)
@@ -105,13 +109,17 @@ func (s *createTableService) EnsureDailyTablesExist(date time.Time) error {
 	latestTable := fmt.Sprintf("t_bond_latest_quote_%s", dateStr)
 
 	// 检查并创建明细表
-	if err := s.db.Table(detailTable).AutoMigrate(&model.BondQuoteDetail{}); err != nil {
-		return fmt.Errorf("创建明细表失败 %s: %w", detailTable, err)
+	if !s.db.Migrator().HasTable(detailTable) {
+		if err := s.db.Table(detailTable).AutoMigrate(&model.BondQuoteDetail{}); err != nil {
+			return fmt.Errorf("创建明细表失败 %s: %w", detailTable, err)
+		}
 	}
 
 	// 检查并创建最新行情表
-	if err := s.db.Table(latestTable).AutoMigrate(&model.BondLatestQuote{}); err != nil {
-		return fmt.Errorf("创建最新行情表失败 %s: %w", latestTable, err)
+	if !s.db.Migrator().HasTable(latestTable) {
+		if err := s.db.Table(latestTable).AutoMigrate(&model.BondLatestQuote{}); err != nil {
+			return fmt.Errorf("创建最新行情表失败 %s: %w", latestTable, err)
+		}
 	}
 
 	log.Printf("成功创建表: %s, %s", detailTable, latestTable)
