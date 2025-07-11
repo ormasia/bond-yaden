@@ -60,17 +60,7 @@ type ExportConfig struct {
 	RetentionDays int    `yaml:"retentionDays"`
 }
 
-// MySQLConfig MySQL数据库配置（预留给生产环境）
-type MySQLConfig struct {
-	User            string `json:"user"`
-	Password        string `json:"password"`
-	Host            string `json:"host"`
-	Port            string `json:"port"`
-	Schema          string `json:"schema"`
-	MaxIdleConn     int    `json:"maxIdleConn"`
-	MaxOpenConn     int    `json:"maxOpenConn"`
-	ConnMaxLifetime int    `json:"connMaxLifetime"`
-}
+// 移除重复的MySQLConfig，使用pkg/db中的MysqlCfg和DBPoolConfig
 
 // 配置获取函数
 func GetCfg(key string, cfg interface{}) error {
@@ -98,9 +88,6 @@ var (
 
 	exportConfig *ExportConfig
 	onceExport   sync.Once
-
-	mysqlConfig *MySQLConfig
-	onceMySQL   sync.Once
 )
 
 // GetAdenATSConfig 获取亚丁ATS配置
@@ -134,15 +121,4 @@ func GetExportConfig() *ExportConfig {
 		}
 	})
 	return exportConfig
-}
-
-// GetMySQLConfig 获取MySQL配置（预留给生产环境）
-func GetMySQLConfig() *MySQLConfig {
-	onceMySQL.Do(func() {
-		mysqlConfig = &MySQLConfig{}
-		if err := GetCfg("mysql", mysqlConfig); err != nil {
-			fmt.Printf("警告: 获取MySQL配置失败: %v\n", err)
-		}
-	})
-	return mysqlConfig
 }

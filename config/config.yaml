@@ -48,3 +48,23 @@ export:
   path: "/data/export/bond_quote"
   urlPrefix: "http://localhost:8081/export"
   retentionDays: 7
+
+# MySQL配置
+# mysql:
+#   fund:
+#     user: "fund_user"
+#     password: "fund_pass"
+#     host: "localhost"
+#     port: "3306"
+#     schema: "fund_db"
+#   bond:
+#     user: "bond_user"
+#     password: "bond_pass"
+#     host: "localhost"
+#     port: "3306"
+#     schema: "bond_db"
+
+# mysqlDBPool:
+#   maxIdleConn: 10
+#   maxOpenConn: 100
+#   connMaxLifetime: 600

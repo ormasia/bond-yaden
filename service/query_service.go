@@ -422,10 +422,6 @@ func (s *BondQueryService) ExportCurrentLatestQuotes() (string, error) {
 	return filename, nil
 }
 
-// 移除耦合的OSS代码，改为使用pkg/oss包
-
-// 检查表是否存在（兼容SQLite和MySQL）
 func (s *BondQueryService) tableExists(tableName string) bool {
-	// 使用GORM的Migrator检查表是否存在，兼容多种数据库
 	return s.db.Migrator().HasTable(tableName)
 }
