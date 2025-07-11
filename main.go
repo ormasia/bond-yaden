@@ -190,6 +190,9 @@ func main() {
 	// 每小时导出最新行情数据
 	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
 
+	// 每周创建表
+	service.NewCreateTableService(db).StartWeeklyTableCreation()
+
 	fmt.Println("开始亚丁ATS系统测试...")
 
 	// 创建STOMP客户端实例

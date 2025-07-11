@@ -93,6 +93,7 @@ func getWeekDates(date time.Time) []time.Time {
 		daysUntilMonday += 7 // 如果今天是周一，则返回本周一到下周一
 	}
 
+	daysUntilMonday++ // 包括下周一
 	// 生成从当前日期到下周一前的所有日期
 	dates := make([]time.Time, daysUntilMonday)
 	for i := 0; i < daysUntilMonday; i++ {
