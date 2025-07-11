@@ -285,9 +285,147 @@ func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) (string, er
 	return filename, nil
 }
 
-// 检查表是否存在
+// ExportCurrentLatestQuotes 导出当前最新行情到Excel
+func (s *BondQueryService) ExportCurrentLatestQuotes() (string, error) {
+	// 查询当前最新行情数据
+	var latestQuotes []model.BondLatestQuote
+	if err := s.db.Find(&latestQuotes).Error; err != nil {
+		return "", fmt.Errorf("查询最新行情数据失败: %w", err)
+	}
+
+	// 创建Excel文件
+	f := excelize.NewFile()
+	defer f.Close()
+
+	// 设置工作表名称
+	sheetName := "债券最新行情"
+	index, err := f.NewSheet(sheetName)
+	if err != nil {
+		return "", fmt.Errorf("创建工作表失败: %w", err)
+	}
+	f.SetActiveSheet(index)
+
+	// 设置表头
+	headers := []string{
+		"债券代码",
+		"买方价格", "买方收益率", "买方数量", "买方报价时间",
+		"卖方价格", "卖方收益率", "卖方数量", "卖方报价时间",
+		"消息ID", "消息类型", "发送时间", "时间戳", "更新时间",
+		"买方券商ID", "卖方券商ID",
+	}
+
+	for i, header := range headers {
+		cell := fmt.Sprintf("%c1", 'A'+i)
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	// 设置行索引
+	rowIndex := 2
+
+	// 填充数据
+	for _, quote := range latestQuotes {
+		// 解析JSON数据
+		var msg BondQuoteMessage
+		if err := json.Unmarshal([]byte(quote.RawJSON), &msg); err != nil {
+			continue
+		}
+
+		// 解析内部报价数据
+		var payload QuotePriceData
+		if err := json.Unmarshal([]byte(msg.Data.QuotePriceData), &payload); err != nil {
+			continue
+		}
+
+		// 获取买方和卖方报价
+		var bidPrices []QuotePrice
+		var askPrices []QuotePrice
+
+		if len(payload.BidPrices) > 0 {
+			bidPrices = payload.BidPrices
+		}
+
+		if len(payload.AskPrices) > 0 {
+			askPrices = payload.AskPrices
+		}
+
+		// 确定需要多少行
+		maxRows := len(bidPrices)
+		if len(askPrices) > maxRows {
+			maxRows = len(askPrices)
+		}
+
+		// 如果没有任何报价，至少创建一行基本信息
+		if maxRows == 0 {
+			// 债券代码
+			f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), quote.ISIN)
+
+			// 消息元数据
+			f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIndex), quote.MessageID)
+			f.SetCellValue(sheetName, fmt.Sprintf("K%d", rowIndex), quote.MessageType)
+			f.SetCellValue(sheetName, fmt.Sprintf("L%d", rowIndex), time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("M%d", rowIndex), time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("N%d", rowIndex), quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"))
+			rowIndex++
+			continue
+		}
+
+		// 填充每一行数据
+		for i := 0; i < maxRows; i++ {
+			// 债券代码
+			f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), quote.ISIN)
+
+			// 买方数据
+			if i < len(bidPrices) {
+				bid := bidPrices[i]
+				f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), bid.Price)
+				f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIndex), bid.Yield)
+				f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIndex), bid.OrderQty)
+				f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIndex), time.UnixMilli(bid.QuoteTime).Format("2006-01-02 15:04:05.000"))
+				f.SetCellValue(sheetName, fmt.Sprintf("O%d", rowIndex), bid.BrokerID)
+			}
+
+			// 卖方数据
+			if i < len(askPrices) {
+				ask := askPrices[i]
+				f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIndex), ask.Price)
+				f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIndex), ask.Yield)
+				f.SetCellValue(sheetName, fmt.Sprintf("H%d", rowIndex), ask.OrderQty)
+				f.SetCellValue(sheetName, fmt.Sprintf("I%d", rowIndex), time.UnixMilli(ask.QuoteTime).Format("2006-01-02 15:04:05.000"))
+				f.SetCellValue(sheetName, fmt.Sprintf("P%d", rowIndex), ask.BrokerID)
+			}
+
+			// 消息元数据
+			f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIndex), quote.MessageID)
+			f.SetCellValue(sheetName, fmt.Sprintf("K%d", rowIndex), quote.MessageType)
+			f.SetCellValue(sheetName, fmt.Sprintf("L%d", rowIndex), time.UnixMilli(quote.SendTime).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("M%d", rowIndex), time.UnixMilli(quote.Timestamp).Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("N%d", rowIndex), quote.LastUpdateTime.Format("2006-01-02 15:04:05.000"))
+
+			rowIndex++
+		}
+	}
+
+	// 设置列宽
+	for i := 0; i < len(headers); i++ {
+		colName := fmt.Sprint('A' + i)
+		f.SetColWidth(sheetName, colName, colName, 18)
+	}
+
+	// 生成文件名
+	filename := fmt.Sprintf("bond_latest_quotes_%s.xlsx", time.Now().Format("20060102_150405"))
+
+	// 保存文件
+	if err := f.SaveAs(filename); err != nil {
+		return "", fmt.Errorf("保存Excel文件失败: %w", err)
+	}
+
+	return filename, nil
+}
+
+// 移除耦合的OSS代码，改为使用pkg/oss包
+
+// 检查表是否存在（兼容SQLite和MySQL）
 func (s *BondQueryService) tableExists(tableName string) bool {
-	var count int64
-	s.db.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?", tableName).Count(&count)
-	return count > 0
+	// 使用GORM的Migrator检查表是否存在，兼容多种数据库
+	return s.db.Migrator().HasTable(tableName)
 }

@@ -1,6 +1,6 @@
 package oss
 
 type OssInfo struct {
-	Url string `yaml:"url"`
-	Timeout int `yaml:"timeout"`
+	Url     string `yaml:"url"`
+	Timeout int    `yaml:"timeout"`
 }
