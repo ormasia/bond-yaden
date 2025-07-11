@@ -87,3 +87,21 @@ headers := []string{
 
 最新行情接口，按时间段返回每日日终数据
 明细接口，按时间范围返回某一日的数据
+
+使用配置
+```go
+// 获取亚丁ATS配置
+adenConfig := config.GetAdenATSConfig()
+fmt.Printf("BaseURL: %s\n", adenConfig.BaseURL)
+
+// 获取数据处理配置  
+dataConfig := config.GetDataProcessConfig()
+fmt.Printf("WorkerNum: %d\n", dataConfig.WorkerNum)
+
+// 获取导出配置
+exportConfig := config.GetExportConfig()
+fmt.Printf("Path: %s\n", exportConfig.Path)
+
+// 获取MySQL配置（预留）
+mysqlConfig := config.GetMySQLConfig()
+```

@@ -46,8 +46,8 @@ func init() {
 	go run()
 }
 
-//设置日志输出路径及级别
-//如不做任何设置，默认输出到标准输出，日志级别默认为LOGLEVEL_INFO
+// 设置日志输出路径及级别
+// 如不做任何设置，默认输出到标准输出，日志级别默认为LOGLEVEL_INFO
 func SetLog(fileName string, level int) {
 	SetLogFileName(fileName)
 	SetLogLevel(level)
@@ -88,11 +88,11 @@ func SetLogMaxFileNum(maxFileNum int) {
 func SetLogLevel(level interface{}) {
 	ilevel := LOGLEVEL_INFO
 
-	switch level.(type) {
+	switch level := level.(type) {
 	case int:
-		ilevel = level.(int)
+		ilevel = level
 	case string:
-		level = strings.ToUpper(level.(string))
+		level = strings.ToUpper(level)
 		switch level {
 		case "OFF":
 			ilevel = LOGLEVEL_OFF
@@ -303,10 +303,7 @@ func flush() {
 func isExist(path string) bool {
 	_, err := os.Stat(path)
 	if err != nil {
-		if os.IsExist(err) {
-			return true
-		}
-		return false
+		return os.IsExist(err)
 	}
 	return true
 }

@@ -134,16 +134,16 @@ func init() {
 	fmt.Println("init from local YAML file!")
 }
 
-// 移除硬编码常量，改用配置读取
-
 // 1. 用户登录获取访问令牌
 // 2. 建立WebSocket连接
 // 3. 建立STOMP协议连接
 // 4. 订阅债券行情消息
 // 5. 持续监听消息推送
 func main() {
+	// 获取亚丁ATS配置
+	adenConfig := config.GetAdenATSConfig()
 
-	log.Printf("使用配置 - ATS地址: %s, 用户: %s", BASE_URL, USERNAME)
+	log.Printf("使用配置 - ATS地址: %s, 用户: %s", adenConfig.BaseURL, adenConfig.Username)
 
 	var db *gorm.DB
 	db, err := gorm.Open(sqlite.Dialector{
@@ -186,6 +186,8 @@ func main() {
 	// 	}
 	// }
 	// RawChan <- rawjson
+
+	// 每小时导出最新行情数据
 	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
 
 	fmt.Println("开始亚丁ATS系统测试...")
@@ -196,7 +198,7 @@ func main() {
 	// 第一步：用户登录获取访问令牌
 	// 使用加密通信协议，获取后续API调用所需的token
 	fmt.Println("第一步：登录获取Token...")
-	if err := client.login(USERNAME, PASSWORD, SMS_CODE, PUBLIC_KEY, BASE_URL, CLIENT_ID); err != nil {
+	if err := client.login(adenConfig.Username, adenConfig.Password, adenConfig.SmsCode, adenConfig.PublicKey, adenConfig.BaseURL, adenConfig.ClientId); err != nil {
 		log.Fatal("登录失败:", err)
 	}
 	fmt.Printf("登录成功，获取到Token: %s\n", client.token[:20]+"...")
@@ -204,7 +206,7 @@ func main() {
 	// 第二步：建立WebSocket连接
 	// 使用获取的token建立安全的WebSocket连接
 	fmt.Println("第二步：建立WebSocket连接...")
-	if err := client.connectWebSocket(WSS_URL); err != nil {
+	if err := client.connectWebSocket(adenConfig.WssURL); err != nil {
 		log.Fatal("WebSocket连接失败:", err)
 	}
 	defer client.conn.Close() // 确保程序退出时关闭连接

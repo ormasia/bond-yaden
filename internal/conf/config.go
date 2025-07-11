@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/spf13/viper"
@@ -76,7 +77,11 @@ func GetCfg(key string, cfg interface{}) error {
 	if key == "" {
 		return viper.Unmarshal(cfg)
 	}
-	return viper.Sub(key).Unmarshal(cfg)
+	sub := viper.Sub(key)
+	if sub == nil {
+		return fmt.Errorf("配置键 '%s' 不存在", key)
+	}
+	return sub.Unmarshal(cfg)
 }
 
 func GetCfgStr(key string) string {
@@ -102,7 +107,9 @@ var (
 func GetAdenATSConfig() *AdenATSConfig {
 	onceAdenATS.Do(func() {
 		adenATSConfig = &AdenATSConfig{}
-		_ = GetCfg("adenATS", adenATSConfig)
+		if err := GetCfg("adenATS", adenATSConfig); err != nil {
+			fmt.Printf("警告: 获取亚丁ATS配置失败: %v\n", err)
+		}
 	})
 	return adenATSConfig
 }
@@ -111,7 +118,9 @@ func GetAdenATSConfig() *AdenATSConfig {
 func GetDataProcessConfig() *DataProcessConfig {
 	onceDataProcess.Do(func() {
 		dataProcessConfig = &DataProcessConfig{}
-		_ = GetCfg("dataProcess", dataProcessConfig)
+		if err := GetCfg("dataProcess", dataProcessConfig); err != nil {
+			fmt.Printf("警告: 获取数据处理配置失败: %v\n", err)
+		}
 	})
 	return dataProcessConfig
 }
@@ -120,7 +129,9 @@ func GetDataProcessConfig() *DataProcessConfig {
 func GetExportConfig() *ExportConfig {
 	onceExport.Do(func() {
 		exportConfig = &ExportConfig{}
-		_ = GetCfg("export", exportConfig)
+		if err := GetCfg("export", exportConfig); err != nil {
+			fmt.Printf("警告: 获取文件导出配置失败: %v\n", err)
+		}
 	})
 	return exportConfig
 }
@@ -129,7 +140,9 @@ func GetExportConfig() *ExportConfig {
 func GetMySQLConfig() *MySQLConfig {
 	onceMySQL.Do(func() {
 		mysqlConfig = &MySQLConfig{}
-		_ = GetCfg("mysql", mysqlConfig)
+		if err := GetCfg("mysql", mysqlConfig); err != nil {
+			fmt.Printf("警告: 获取MySQL配置失败: %v\n", err)
+		}
 	})
 	return mysqlConfig
 }

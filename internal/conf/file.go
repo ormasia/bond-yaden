@@ -7,7 +7,8 @@ import (
 )
 
 func InitFromLocalFile(fileName, fileType string) {
-	viper.AddConfigPath("./config/dev-k8s") //for local dev!!! delete if you dont like it
+	viper.AddConfigPath("./config") // 主配置目录
+	viper.AddConfigPath("./config/dev-k8s")
 	viper.AddConfigPath("/data/conf")
 	viper.AddConfigPath("./app/conf")
 	viper.SetConfigType(fileType)

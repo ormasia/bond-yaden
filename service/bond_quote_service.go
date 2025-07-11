@@ -14,6 +14,19 @@ import (
 	"test/model"
 )
 
+var (
+	msgPool = sync.Pool{
+		New: func() interface{} {
+			return &BondQuoteMessage{}
+		},
+	}
+	qpdPool = sync.Pool{
+		New: func() interface{} {
+			return &QuotePriceData{}
+		},
+	}
+)
+
 // BondQuoteService 债券行情服务
 type BondQuoteService struct {
 	db         *gorm.DB
@@ -81,13 +94,15 @@ type ParsedQuote struct {
 
 // ParseBondQuote 把 STOMP body 原始 JSON 解析成领域对象
 func ParseBondQuote(raw []byte) (*ParsedQuote, error) {
-	var msg BondQuoteMessage
-	if err := json.Unmarshal(raw, &msg); err != nil {
+	msg := msgPool.Get().(*BondQuoteMessage)
+	defer msgPool.Put(msg)
+	if err := json.Unmarshal(raw, msg); err != nil {
 		return nil, fmt.Errorf("unmarshal BondQuoteMessage: %w", err)
 	}
 
-	var payload QuotePriceData
-	if err := json.Unmarshal([]byte(msg.Data.QuotePriceData), &payload); err != nil {
+	payload := qpdPool.Get().(*QuotePriceData)
+	defer qpdPool.Put(payload)
+	if err := json.Unmarshal([]byte(msg.Data.QuotePriceData), payload); err != nil {
 		return nil, fmt.Errorf("unmarshal QuotePriceData: %w", err)
 	}
 
@@ -97,8 +112,8 @@ func ParseBondQuote(raw []byte) (*ParsedQuote, error) {
 	}
 
 	return &ParsedQuote{
-		Meta:    msg,
-		Payload: payload,
+		Meta:    *msg,
+		Payload: *payload,
 	}, nil
 }
 
@@ -122,27 +137,6 @@ func (bqs *BondQuoteService) StartParseWorkers(workerNum int) {
 		}()
 	}
 }
-
-// // StartParseWorkers — 解析层
-// func StartParseWorkers(pool *sync.WaitGroup, RawChan chan []byte, ParsedChan chan *ParsedQuote, DeadChan chan []byte, workerNum int) {
-// 	for i := 0; i < workerNum; i++ {
-// 		pool.Add(1)
-// 		go func() {
-// 			defer pool.Done()
-// 			for raw := range RawChan {
-// 				pq, err := ParseBondQuote(raw)
-// 				switch {
-// 				// case err == service.ErrNotQuote:
-// 				// 	continue // 过滤非行情
-// 				case err != nil:
-// 					DeadChan <- raw
-// 					continue
-// 				}
-// 				ParsedChan <- pq
-// 			}
-// 		}()
-// 	}
-// }
 
 // StartDBWorkers — 写库层
 func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushDelay time.Duration) {
@@ -184,47 +178,6 @@ func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushD
 		}()
 	}
 }
-
-// // StartDBWorkers — 写库层
-// func StartDBWorkers(db *gorm.DB, pool *sync.WaitGroup, ParsedChan chan *ParsedQuote, workerNum int, batchSize int, flushDelay time.Duration) {
-// 	// 提前关掉自动事务和预编译
-// 	db = db.Session(&gorm.Session{SkipDefaultTransaction: true, PrepareStmt: true})
-
-// 	for i := 0; i < workerNum; i++ {
-// 		pool.Add(1)
-// 		go func() {
-// 			defer pool.Done()
-// 			ticker := time.NewTicker(flushDelay)
-// 			batch := make([]*ParsedQuote, 0, batchSize)
-
-// 			flush := func() {
-// 				if len(batch) == 0 {
-// 					return
-// 				}
-// 				if err := InsertBatch(db, batch); err != nil {
-// 					log.Printf("批量写库失败: %v", err)
-// 				}
-// 				batch = batch[:0]
-// 			}
-
-// 			for {
-// 				select {
-// 				case pq, ok := <-ParsedChan:
-// 					if !ok { // channel 关闭，写最后一批
-// 						flush()
-// 						return
-// 					}
-// 					batch = append(batch, pq)
-// 					if len(batch) >= batchSize {
-// 						flush()
-// 					}
-// 				case <-ticker.C:
-// 					flush()
-// 				}
-// 			}
-// 		}()
-// 	}
-// }
 
 // GetTodayTableName 获取当天表名
 func GetTodayDetailTableName() string {
