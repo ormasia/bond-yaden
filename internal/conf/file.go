@@ -7,10 +7,9 @@ import (
 )
 
 func InitFromLocalFile(fileName, fileType string) {
-	viper.AddConfigPath("./conf/")    // 配置文件在 pkg 目录下
-	viper.AddConfigPath("./conf/")    // 备用路径
-	viper.AddConfigPath("/data/conf") // 生产环境路径
-	viper.AddConfigPath("./app/conf") // 备用路径
+	viper.AddConfigPath("./config/dev-k8s") //for local dev!!! delete if you dont like it
+	viper.AddConfigPath("/data/conf")
+	viper.AddConfigPath("./app/conf")
 	viper.SetConfigType(fileType)
 	viper.SetConfigName(fileName)
 	viper.AutomaticEnv()

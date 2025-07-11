@@ -28,13 +28,13 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	config "test/internal/conf"
+	"test/pkg/utils"
 	"test/service"
-	"test/utils"
 	"time"
 
 	"github.com/go-stomp/stomp/v3"
 	"github.com/gorilla/websocket"
-	"github.com/joho/godotenv"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -100,27 +100,50 @@ type StompClient struct {
 	token     string          // 访问令牌，用于身份验证
 }
 
+const (
+	APP_NAME      = "mkt-wealth-data-service"
+	APP_NACOS_KEY = "mkt-wealth-data-service@@mkt@@mkt"
+)
+
+func init() {
+	var initCfgOK = true
+	er := config.NewNacosClientInsFromEnv(APP_NAME)
+	if er == nil {
+		err := config.GetViperCfgFromNacos(APP_NACOS_KEY, "", "json") // add config here
+		if err != nil {
+			fmt.Printf("getCfgFromNacos error:%s\n", err.Error())
+			initCfgOK = false
+		} else {
+			for localKey, v := range config.NacosKeys {
+				err := config.GetViperCfgFromNacos(v, localKey, "json")
+				if err != nil {
+					fmt.Printf("getCfgFromNacos key:%s error:%s\n", v, err.Error())
+					initCfgOK = false
+					break
+				}
+			}
+			if initCfgOK {
+				fmt.Println("init from Nacos OK!")
+				return
+			}
+		}
+	} else {
+		fmt.Printf("nacos init error:%s\n", er.Error())
+	}
+	config.InitFromLocalFile("config", "yaml")
+	fmt.Println("init from local YAML file!")
+}
+
+// 移除硬编码常量，改用配置读取
+
 // 1. 用户登录获取访问令牌
 // 2. 建立WebSocket连接
 // 3. 建立STOMP协议连接
 // 4. 订阅债券行情消息
 // 5. 持续监听消息推送
 func main() {
-	// 加载.env文件
 
-	if err := godotenv.Load(); err != nil {
-		log.Printf("警告: 无法加载.env文件: %v", err)
-		log.Println("将使用系统环境变量")
-	}
-
-	// 获取环境变量，如果不存在则使用默认值
-	Base_URL := getEnv("BASE_URL", "https://adenapi.cstm.adenfin.com")
-	WSS_URL := getEnv("WSS_URL", "wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws")
-	USERNAME := "ATSTEST10001"
-	PASSWORD := getEnv("PASSWORD", "Abc12345")
-	SMS_CODE := getEnv("SMS_CODE", "1234")
-	CLIENT_ID := getEnv("CLIENT_ID", "30021")
-	PUBLIC_KEY := getEnv("PUBLIC_KEY", "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB")
+	log.Printf("使用配置 - ATS地址: %s, 用户: %s", BASE_URL, USERNAME)
 
 	var db *gorm.DB
 	db, err := gorm.Open(sqlite.Dialector{
@@ -133,7 +156,7 @@ func main() {
 	}
 
 	// // 模拟输入 - 使用反引号包裹原始JSON字符串，避免转义问题
-	rawjson := []byte(`{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}`)
+	// rawjson := []byte(`{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}`)
 
 	// // 本地测试：直接调用解析函数
 	// fmt.Println("开始本地测试解析...")
@@ -162,7 +185,7 @@ func main() {
 	// 		fmt.Printf("数据库验证: 明细表记录数=%d, 最新表记录数=%d\n", detailCount, latestCount)
 	// 	}
 	// }
-	RawChan <- rawjson
+	// RawChan <- rawjson
 	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
 
 	fmt.Println("开始亚丁ATS系统测试...")
@@ -173,7 +196,7 @@ func main() {
 	// 第一步：用户登录获取访问令牌
 	// 使用加密通信协议，获取后续API调用所需的token
 	fmt.Println("第一步：登录获取Token...")
-	if err := client.login(USERNAME, PASSWORD, SMS_CODE, PUBLIC_KEY, Base_URL, CLIENT_ID); err != nil {
+	if err := client.login(USERNAME, PASSWORD, SMS_CODE, PUBLIC_KEY, BASE_URL, CLIENT_ID); err != nil {
 		log.Fatal("登录失败:", err)
 	}
 	fmt.Printf("登录成功，获取到Token: %s\n", client.token[:20]+"...")
@@ -564,13 +587,4 @@ func (w *WebSocketNetConn) LocalAddr() net.Addr {
 
 func (w *WebSocketNetConn) RemoteAddr() net.Addr {
 	return w.conn.RemoteAddr()
-}
-
-// 添加一个辅助函数来获取环境变量，如果不存在则使用默认值
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
 }
