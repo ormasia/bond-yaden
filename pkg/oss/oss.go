@@ -27,7 +27,7 @@ type OssInfo struct {
 // headers: map[string]string，包含 x-request-id、x-session、x-uin
 // ossInfo: OSS服务配置
 // 返回: OssUploadResp, error
-func UploadFile(category, filePath, fileName, md5 string, headers map[string]string, ossInfo *OssInfo) (ossid, url string, err error) {
+func UploadFile(filePath, fileName, md5 string, headers map[string]string, ossInfo *OssInfo) (ossid, url string, err error) {
 	// 检查文件是否存在
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return "", "", fmt.Errorf("文件不存在: %s", filePath)

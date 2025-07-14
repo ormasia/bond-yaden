@@ -1,7 +1,9 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +15,7 @@ import (
 
 	config "wealth-bond-quote-service/internal/conf"
 	"wealth-bond-quote-service/model"
+	"wealth-bond-quote-service/pkg/dtalk"
 	"wealth-bond-quote-service/pkg/oss"
 )
 
@@ -202,7 +205,7 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 	}
 	fileNameOnly := filepath.Base(filename)
 
-	_, url, err := oss.UploadFile("", filename, fileNameOnly, "", nil, &ossInfo)
+	_, url, err := oss.UploadFile(filename, fileNameOnly, "", nil, &ossInfo)
 	if err != nil {
 		return fmt.Errorf("上传文件到OSS失败: %w", err)
 	}
@@ -210,6 +213,14 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 	// 然后调用钉钉发送消息的服务，不用拼接url直接是可以下载的连接，把这个url用钉钉发送一下就行
 	// 发送钉钉消息
 	fmt.Print("发送钉钉消息: ", url)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := dtalk.DTalkSendTextMsg(ctx, url); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return fmt.Errorf("发送钉钉消息超时: %w", err)
+		}
+		return fmt.Errorf("发送钉钉消息失败: %w", err)
+	}
 
 	// 删除本地文件
 	if err := os.Remove(filename); err != nil {
