@@ -59,6 +59,10 @@ type ExportConfig struct {
 	URLPrefix     string `yaml:"urlPrefix"`
 	RetentionDays int    `yaml:"retentionDays"`
 }
+type OSSConfig struct {
+	URL     string `yaml:"url"`
+	Timeout int    `yaml:"timeout"` // 超时时间（秒）
+}
 
 // 配置获取函数
 func GetCfg(key string, cfg interface{}) error {

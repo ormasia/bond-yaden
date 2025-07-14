@@ -20,7 +20,7 @@ type OssInfo struct {
 }
 
 // UploadFile 上传文件到OSS（支持业务分类、请求头、form-data参数）
-// category: 业务分类（如 Avatar）
+// category: 业务分类（如 Open）
 // filePath: 文件完整路径
 // fileName: 文件名称
 // md5: 文件MD5（可选，传空则不带）

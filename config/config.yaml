@@ -47,4 +47,7 @@ dataProcess:
 export:
   path: "/data/export/bond_quote"
   urlPrefix: "http://localhost:8081/export"
+  # oss:
+  #   url: "http://oss.cstm.adenfin.com"
+  #   timeout: 30 # 超时时间（秒）
   retentionDays: 7
