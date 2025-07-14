@@ -8,7 +8,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	rpc "test/internal/JSONRPC"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type OssInfo struct {
@@ -100,11 +103,27 @@ func UploadFile(category, filePath, fileName, md5 string, headers map[string]str
 		return "", "", fmt.Errorf("读取响应内容失败: %w", err)
 	}
 
-	var respMap map[string]any
-	if err := json.Unmarshal(responseBody, &respMap); err != nil {
+	jsonresp := rpc.Response{}
+
+	if err := json.Unmarshal(responseBody, &jsonresp); err != nil {
 		return "", "", fmt.Errorf("响应解析失败: %w, 内容: %s", err, string(responseBody))
+	}
+	// 检查响应状态
+	if jsonresp.Error != nil {
+		return "", "", fmt.Errorf("上传失败: %s, 错误码: %d", jsonresp.Error.Message, jsonresp.Error.Code)
+	}
+
+	// 解析响应
+	type OssUploadResp struct {
+		Ossid string `json:"ossid"`
+		Url   string `json:"url"`
+	}
+
+	var ossUploadResp OssUploadResp
+	if err := mapstructure.Decode(jsonresp.Data, &ossUploadResp); err != nil {
+		return "", "", fmt.Errorf("响应结构体映射失败: %w", err)
 	}
 
 	// 返回响应结构体
-	return "", "", nil
+	return ossUploadResp.Ossid, ossUploadResp.Url, nil
 }
