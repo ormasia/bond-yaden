@@ -8,7 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	rpc "test/internal/JSONRPC"
+	rpc "test/internal/jsonrpc"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
