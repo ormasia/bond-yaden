@@ -60,8 +60,6 @@ type ExportConfig struct {
 	RetentionDays int    `yaml:"retentionDays"`
 }
 
-// 移除重复的MySQLConfig，使用pkg/db中的MysqlCfg和DBPoolConfig
-
 // 配置获取函数
 func GetCfg(key string, cfg interface{}) error {
 	if key == "" {

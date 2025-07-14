@@ -101,21 +101,21 @@ type StompClient struct {
 }
 
 const (
-	APP_NAME      = "mkt-wealth-data-service"
-	APP_NACOS_KEY = "mkt-wealth-data-service@@mkt@@mkt"
+	APP_NAME      = "wealth-bond-quote-aden"
+	APP_NACOS_KEY = "wealth-bond-quote-aden@@wealth@@wealth"
 )
 
 func init() {
 	var initCfgOK = true
 	er := config.NewNacosClientInsFromEnv(APP_NAME)
 	if er == nil {
-		err := config.GetViperCfgFromNacos(APP_NACOS_KEY, "", "json") // add config here
+		err := config.GetViperCfgFromNacos(APP_NACOS_KEY, "", "yaml") // add config here
 		if err != nil {
 			fmt.Printf("getCfgFromNacos error:%s\n", err.Error())
 			initCfgOK = false
 		} else {
 			for localKey, v := range config.NacosKeys {
-				err := config.GetViperCfgFromNacos(v, localKey, "json")
+				err := config.GetViperCfgFromNacos(v, localKey, "yaml")
 				if err != nil {
 					fmt.Printf("getCfgFromNacos key:%s error:%s\n", v, err.Error())
 					initCfgOK = false
