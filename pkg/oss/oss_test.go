@@ -24,7 +24,7 @@ func TestUploadFile_Mock(t *testing.T) {
 		Timeout: 5,
 	}
 
-	ossid, url, err := UploadFile("Open", "D:\\Users\\jingbo.yang\\Desktop\\projectCode\\bond-yaden\\export\\bond_latest_quotes_20250708_140804.xlsx", "bond_latest_quotes_20250708_140804.xlsx", "", nil, ossInfo)
+	ossid, url, err := UploadFile("Public", "D:\\Users\\jingbo.yang\\Desktop\\projectCode\\bond-yaden\\export\\bond_latest_quotes_20250708_140804.xlsx", "bond_latest_quotes_20250708_140804.xlsx", "", nil, ossInfo)
 	if err != nil {
 		t.Fatalf("上传文件失败: %v", err)
 	}

@@ -41,23 +41,21 @@ type AdenATSConfig struct {
 
 // DataProcessConfig 数据处理配置
 type DataProcessConfig struct {
-	RawBufferSize        int `yaml:"rawBufferSize"`
-	ParsedBufferSize     int `yaml:"parsedBufferSize"`
-	DeadBufferSize       int `yaml:"deadBufferSize"`
-	WorkerNum            int `yaml:"workerNum"`
-	ParserWorkerNum      int `yaml:"parserWorkerNum"`
-	DbWorkerNum          int `yaml:"dbWorkerNum"`
-	BatchSize            int `yaml:"batchSize"`
-	FlushDelayMs         int `yaml:"flushDelayMs"`
-	DataRetentionDays    int `yaml:"dataRetentionDays"`
-	CleanupIntervalHours int `yaml:"cleanupIntervalHours"`
+	RawBufferSize    int `yaml:"rawBufferSize"`
+	ParsedBufferSize int `yaml:"parsedBufferSize"`
+	DeadBufferSize   int `yaml:"deadBufferSize"`
+	WorkerNum        int `yaml:"workerNum"`
+	ParserWorkerNum  int `yaml:"parserWorkerNum"`
+	DbWorkerNum      int `yaml:"dbWorkerNum"`
+	BatchSize        int `yaml:"batchSize"`
+	FlushDelayMs     int `yaml:"flushDelayMs"`
 }
 
 // ExportConfig 文件导出配置
 type ExportConfig struct {
-	Path          string `yaml:"path"`
-	URLPrefix     string `yaml:"urlPrefix"`
-	RetentionDays int    `yaml:"retentionDays"`
+	Path          string    `yaml:"path"`
+	OssConfig     OSSConfig `yaml:"oss"`
+	RetentionDays int       `yaml:"retentionDays"`
 }
 type OSSConfig struct {
 	URL     string `yaml:"url"`

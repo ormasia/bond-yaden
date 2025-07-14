@@ -43,13 +43,49 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	rawCap     = 20000 // 原始 JSON 缓冲
-	parsedCap  = 4000  // 解析后缓冲
-	workerNum  = 8     // 解析/写库协程数
-	batchSize  = 300   // 单次批写条数
-	flushDelay = 100 * time.Millisecond
+var (
+	rawCap     int           // 原始 JSON 缓冲
+	parsedCap  int           // 解析后缓冲
+	workerNum  int           // 解析/写库协程数
+	batchSize  int           // 单次批写条数
+	flushDelay time.Duration // 刷新延迟
 )
+
+func init() {
+	var initCfgOK = true
+	er := config.NewNacosClientInsFromEnv(APP_NAME)
+	if er == nil {
+		err := config.GetViperCfgFromNacos(APP_NACOS_KEY, "", "yaml") // add config here
+		if err != nil {
+			fmt.Printf("getCfgFromNacos error:%s\n", err.Error())
+			initCfgOK = false
+		} else {
+			for localKey, v := range config.NacosKeys {
+				err := config.GetViperCfgFromNacos(v, localKey, "yaml")
+				if err != nil {
+					fmt.Printf("getCfgFromNacos key:%s error:%s\n", v, err.Error())
+					initCfgOK = false
+					break
+				}
+			}
+			if initCfgOK {
+				fmt.Println("init from Nacos OK!")
+				return
+			}
+		}
+	} else {
+		fmt.Printf("nacos init error:%s\n", er.Error())
+	}
+	config.InitFromLocalFile("config", "yaml")
+	fmt.Println("init from local YAML file!")
+
+	cfg := config.GetDataProcessConfig()
+	rawCap = cfg.RawBufferSize
+	parsedCap = cfg.ParsedBufferSize
+	workerNum = cfg.WorkerNum
+	batchSize = cfg.BatchSize
+	flushDelay = time.Duration(cfg.FlushDelayMs) * time.Millisecond
+}
 
 var (
 	wg         sync.WaitGroup
@@ -105,35 +141,6 @@ const (
 	APP_NACOS_KEY = "wealth-bond-quote-aden@@wealth@@wealth"
 )
 
-func init() {
-	var initCfgOK = true
-	er := config.NewNacosClientInsFromEnv(APP_NAME)
-	if er == nil {
-		err := config.GetViperCfgFromNacos(APP_NACOS_KEY, "", "yaml") // add config here
-		if err != nil {
-			fmt.Printf("getCfgFromNacos error:%s\n", err.Error())
-			initCfgOK = false
-		} else {
-			for localKey, v := range config.NacosKeys {
-				err := config.GetViperCfgFromNacos(v, localKey, "yaml")
-				if err != nil {
-					fmt.Printf("getCfgFromNacos key:%s error:%s\n", v, err.Error())
-					initCfgOK = false
-					break
-				}
-			}
-			if initCfgOK {
-				fmt.Println("init from Nacos OK!")
-				return
-			}
-		}
-	} else {
-		fmt.Printf("nacos init error:%s\n", er.Error())
-	}
-	config.InitFromLocalFile("config", "yaml")
-	fmt.Println("init from local YAML file!")
-}
-
 // 1. 用户登录获取访问令牌
 // 2. 建立WebSocket连接
 // 3. 建立STOMP协议连接
@@ -187,8 +194,9 @@ func main() {
 	// }
 	// RawChan <- rawjson
 
+	exportConfig := config.GetExportConfig()
 	// 每小时导出最新行情数据
-	service.NewExportLatestQuotesService(db).StartHourlyExport("export")
+	service.NewExportLatestQuotesService(db).StartHourlyExport(exportConfig.Path)
 
 	// 每周创建表
 	service.NewCreateTableService(db).StartWeeklyTableCreation()

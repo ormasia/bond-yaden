@@ -3,7 +3,7 @@ app: # RESTful
   mode: debug # server mode: release, debug, test
   addr: ":8081"
   ver: "0.0.1"
-  prefork: false
+  prefork: false # 否启用多进程模式
 
 log:
   path: "/data/logs/wealth-bond-quote-service/wealth-bond-quote-service.log"
@@ -39,15 +39,11 @@ dataProcess:
   # 批处理配置
   batchSize: 300          # 批处理大小
   flushDelayMs: 100       # 刷新延迟（毫秒）
-  # 数据清理配置
-  dataRetentionDays: 30   # 数据保留天数
-  cleanupIntervalHours: 24 # 清理任务执行间隔（小时）
 
 # 文件导出配置
 export:
-  path: "/data/export/bond_quote"
-  urlPrefix: "http://localhost:8081/export"
-  # oss:
-  #   url: "http://oss.cstm.adenfin.com"
-  #   timeout: 30 # 超时时间（秒）
+  path: "export/bond_quote"
+  oss:
+    url: "http://oss.cstm.adenfin.com"
+    timeout: 30 # 超时时间（秒）
   retentionDays: 7
