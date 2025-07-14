@@ -30,7 +30,7 @@ import (
 	"sync"
 	"time"
 	config "wealth-bond-quote-service/internal/conf"
-	"wealth-bond-quote-service/pkg/utils"
+	utils "wealth-bond-quote-service/pkg/crypto_utils"
 	"wealth-bond-quote-service/service"
 
 	"github.com/go-stomp/stomp/v3"

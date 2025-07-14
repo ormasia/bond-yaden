@@ -15,7 +15,7 @@ import (
 )
 
 type OssInfo struct {
-	Url     string `yaml:"url"`     // OSS上传服务的URL
+	Url     string `yaml:"url"`     // OSS上传服务的完整URL
 	Timeout int    `yaml:"timeout"` // 超时时间（秒）
 }
 
@@ -69,8 +69,8 @@ func UploadFile(category, filePath, fileName, md5 string, headers map[string]str
 		return "", "", fmt.Errorf("关闭writer失败: %w", err)
 	}
 
-	// 拼接上传URL
-	uploadUrl := fmt.Sprintf("%s/oss/v1/Upload/%s", ossInfo.Url, category)
+	// 上传URL
+	uploadUrl := ossInfo.Url
 
 	// 创建HTTP请求
 	req, err := http.NewRequest("POST", uploadUrl, &buf)

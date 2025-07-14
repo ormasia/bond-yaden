@@ -201,7 +201,8 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 		Timeout: ossConfig.Timeout,
 	}
 	fileNameOnly := filepath.Base(filename)
-	_, url, err := oss.UploadFile("Public", filename, fileNameOnly, "", nil, &ossInfo)
+
+	_, url, err := oss.UploadFile("", filename, fileNameOnly, "", nil, &ossInfo)
 	if err != nil {
 		return fmt.Errorf("上传文件到OSS失败: %w", err)
 	}
