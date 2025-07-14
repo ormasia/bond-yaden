@@ -198,7 +198,7 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 	}
 
 	// 这里需要使用 OSS 上传文件，拿到 ossid 和 url，拼接成可以直接下载的url
-	ossConfig := config.GetExportConfig().OssConfig
+	ossConfig := config.GetExportConfig()
 	ossInfo := oss.OssInfo{
 		Url:     ossConfig.URL,
 		Timeout: ossConfig.Timeout,

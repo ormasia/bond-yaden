@@ -53,13 +53,10 @@ type DataProcessConfig struct {
 
 // ExportConfig 文件导出配置
 type ExportConfig struct {
-	Path          string    `yaml:"path"`
-	OssConfig     OSSConfig `yaml:"oss"`
-	RetentionDays int       `yaml:"retentionDays"`
-}
-type OSSConfig struct {
-	URL     string `yaml:"url"`
-	Timeout int    `yaml:"timeout"` // 超时时间（秒）
+	Path          string `yaml:"path"`
+	URL           string `yaml:"url"`
+	Timeout       int    `yaml:"timeout"` // 超时时间（秒）
+	RetentionDays int    `yaml:"retentionDays"`
 }
 
 // 配置获取函数

@@ -43,9 +43,8 @@ dataProcess:
 # 文件导出配置
 export:
   path: "export/bond_quote"
-  oss:
-    url: "http://oss-sit.fosunhanig.com/oss/v1/Upload/Public"
-    timeout: 30 # 超时时间（秒）
+  url: "http://oss-sit.fosunhanig.com/oss/v1/Upload/Public"
+  timeout: 30 # 超时时间（秒）
   retentionDays: 7
 
 # 钉钉配置
