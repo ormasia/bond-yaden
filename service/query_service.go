@@ -3,8 +3,8 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"test/model"
 	"time"
+	"wealth-bond-quote-service/model"
 
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"

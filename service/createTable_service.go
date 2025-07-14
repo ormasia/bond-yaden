@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 	"log"
-	"test/model"
 	"time"
+	"wealth-bond-quote-service/model"
 
 	"gorm.io/gorm"
 )

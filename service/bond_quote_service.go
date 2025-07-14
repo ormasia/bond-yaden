@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"test/model"
+	"wealth-bond-quote-service/model"
 )
 
 var (

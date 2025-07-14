@@ -8,8 +8,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	rpc "test/internal/jsonrpc"
 	"time"
+	rpc "wealth-bond-quote-service/internal/jsonrpc"
 
 	"github.com/mitchellh/mapstructure"
 )

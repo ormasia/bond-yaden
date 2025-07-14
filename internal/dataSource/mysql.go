@@ -2,9 +2,9 @@ package dataSource
 
 import (
 	"sync"
-	config "test/internal/conf"
-	"test/pkg/db"
 	"time"
+	config "wealth-bond-quote-service/internal/conf"
+	"wealth-bond-quote-service/pkg/db"
 
 	"gorm.io/gorm"
 )

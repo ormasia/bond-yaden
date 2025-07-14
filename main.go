@@ -28,10 +28,10 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	config "test/internal/conf"
-	"test/pkg/utils"
-	"test/service"
 	"time"
+	config "wealth-bond-quote-service/internal/conf"
+	"wealth-bond-quote-service/pkg/utils"
+	"wealth-bond-quote-service/service"
 
 	"github.com/go-stomp/stomp/v3"
 	"github.com/gorilla/websocket"

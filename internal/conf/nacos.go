@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	pkgNacos "test/pkg/nacos"
+	pkgNacos "wealth-bond-quote-service/pkg/nacos"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"

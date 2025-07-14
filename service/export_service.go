@@ -11,7 +11,9 @@ import (
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 
-	"test/model"
+	config "wealth-bond-quote-service/internal/conf"
+	"wealth-bond-quote-service/model"
+	"wealth-bond-quote-service/pkg/oss"
 )
 
 // ExportLatestQuotesService 债券最新行情导出服务
@@ -193,8 +195,25 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 	}
 
 	// 这里需要使用 OSS 上传文件，拿到 ossid 和 url，拼接成可以直接下载的url
+	ossConfig := config.GetExportConfig().OssConfig
+	ossInfo := oss.OssInfo{
+		Url:     ossConfig.URL,
+		Timeout: ossConfig.Timeout,
+	}
+	fileNameOnly := filepath.Base(filename)
+	_, url, err := oss.UploadFile("Public", filename, fileNameOnly, "", nil, &ossInfo)
+	if err != nil {
+		return fmt.Errorf("上传文件到OSS失败: %w", err)
+	}
 
-	// 然后调用钉钉发送消息的服务
+	// 然后调用钉钉发送消息的服务，不用拼接url直接是可以下载的连接，把这个url用钉钉发送一下就行
+	// 发送钉钉消息
+	fmt.Print("发送钉钉消息: ", url)
 
+	// 删除本地文件
+	if err := os.Remove(filename); err != nil {
+		return fmt.Errorf("删除本地文件失败: %w", err)
+	}
+	log.Printf("成功删除本地文件: %s", filename)
 	return nil
 }

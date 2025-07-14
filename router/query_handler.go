@@ -1,7 +1,7 @@
 package router
 
 import (
-	"test/service"
+	"wealth-bond-quote-service/service"
 
 	"github.com/gofiber/fiber/v2"
 )
