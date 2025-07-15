@@ -114,11 +114,6 @@ func UploadFile(filePath, fileName, md5 string, headers map[string]string, ossIn
 		return "", "", fmt.Errorf("上传失败: %s, 错误码: %d", jsonresp.Error.Message, jsonresp.Error.Code)
 	}
 
-	dataMap, ok := jsonresp.Data.(map[string]interface{})
-	if ok {
-		fmt.Println("keys:", dataMap)
-	}
-
 	// 解析响应
 	type OssUploadResp struct {
 		OssId  string `json:"ossId" mapstructure:"ossId"`
