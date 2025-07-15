@@ -10,6 +10,45 @@ import (
 	"gorm.io/gorm"
 )
 
+// 响应消息结构体
+type BondQuoteMessage struct {
+	Data          BondQuoteData `json:"data"`
+	SendTime      int64         `json:"sendTime"`
+	WsMessageType string        `json:"wsMessageType"`
+}
+
+type BondQuoteData struct {
+	QuotePriceData string `json:"data"` // 内部JSON字符串
+	MessageID      string `json:"messageId"`
+	MessageType    string `json:"messageType"`
+	Organization   string `json:"organization"`
+	ReceiverID     string `json:"receiverId"`
+	Timestamp      int64  `json:"timestamp"`
+}
+
+// 报价数据结构体 - 用于解析内部JSON字符串
+type QuotePriceData struct {
+	AskPrices  []QuotePrice `json:"askPrices"`
+	BidPrices  []QuotePrice `json:"bidPrices"`
+	SecurityID string       `json:"securityId"`
+}
+
+// 报价结构体
+type QuotePrice struct {
+	BrokerID         string  `json:"brokerId"`
+	IsTbd            string  `json:"isTbd"`
+	IsValid          string  `json:"isValid"`
+	MinTransQuantity float64 `json:"minTransQuantity"`
+	OrderQty         float64 `json:"orderQty"`
+	Price            float64 `json:"price"`
+	QuoteOrderNo     string  `json:"quoteOrderNo"`
+	QuoteTime        int64   `json:"quoteTime"`
+	SecurityID       string  `json:"securityId"`
+	SettleType       string  `json:"settleType"`
+	Side             string  `json:"side"`
+	Yield            float64 `json:"yield"`
+}
+
 // BondQueryService 债券行情查询服务
 type BondQueryService struct {
 	db *gorm.DB
@@ -219,13 +258,23 @@ func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) (string, er
 		return "", fmt.Errorf("结束时间格式错误: %w", err)
 	}
 
-	// 查询指定时间段的明细数据
-	var details []model.BondQuoteDetail
+	// 先查询分组信息，按 quote_time 和 message_id 分组
+	type MessageGroup struct {
+		QuoteTime   time.Time `json:"quote_time"`
+		MessageID   string    `json:"message_id"`
+		MessageType string    `json:"message_type"`
+		Timestamp   int64     `json:"timestamp"`
+		ISIN        string    `json:"isin"`
+	}
+
+	var messageGroups []MessageGroup
 	if err := s.db.Table(tableName).
+		Select("quote_time, message_id, message_type, timestamp, isin").
 		Where("quote_time BETWEEN ? AND ?", startDateTime, endDateTime).
-		Order("quote_time").
-		Find(&details).Error; err != nil {
-		return "", fmt.Errorf("查询时间段数据失败: %w", err)
+		Group("message_id, isin").  // 按消息ID和债券代码分组，因为同一消息ID的其他字段应该相同
+		Order("quote_time, message_id").
+		Find(&messageGroups).Error; err != nil {
+		return "", fmt.Errorf("查询分组数据失败: %w", err)
 	}
 
 	// 创建Excel文件
@@ -242,8 +291,11 @@ func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) (string, er
 
 	// 设置表头
 	headers := []string{
-		"债券代码", "报价方向", "价格", "收益率", "数量", "报价时间",
-		"券商ID", "消息ID", "消息类型", "发送时间", "时间戳",
+		"债券代码",
+		"买方价格", "买方收益率", "买方数量", "买方报价时间",
+		"卖方价格", "卖方收益率", "卖方数量", "卖方报价时间",
+		"消息ID", "消息类型", "发送时间", "时间戳",
+		"买方券商ID", "卖方券商ID",
 	}
 
 	for i, header := range headers {
@@ -251,22 +303,88 @@ func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) (string, er
 		f.SetCellValue(sheetName, cell, header)
 	}
 
-	// 填充数据
-	for i, detail := range details {
-		rowIndex := i + 2 // 从第2行开始（第1行是表头）
+	// 设置行索引
+	rowIndex := 2
 
-		f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), detail.ISIN)
-		f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), detail.Side)
-		f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIndex), detail.Price)
-		if detail.Yield != nil {
-			f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIndex), *detail.Yield)
+	// 遍历每个消息组，获取完整的买卖报价信息
+	for _, group := range messageGroups {
+		// 查询该消息组的所有明细记录
+		var details []model.BondQuoteDetail
+		if err := s.db.Table(tableName).
+			Where("message_id = ? AND isin = ?", group.MessageID, group.ISIN).
+			Find(&details).Error; err != nil {
+			return "", fmt.Errorf("查询明细数据失败: %w", err)
 		}
-		f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIndex), detail.OrderQty)
-		f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIndex), detail.QuoteTime.Format("2006-01-02 15:04:05.000"))
-		f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIndex), detail.BrokerID)
-		f.SetCellValue(sheetName, fmt.Sprintf("H%d", rowIndex), detail.MessageID)
-		f.SetCellValue(sheetName, fmt.Sprintf("I%d", rowIndex), detail.MessageType)
-		f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIndex), time.UnixMilli(detail.Timestamp).Format("2006-01-02 15:04:05.000"))
+
+		// 按买卖方向分组
+		var bidPrices []model.BondQuoteDetail
+		var askPrices []model.BondQuoteDetail
+
+		for _, detail := range details {
+			if detail.Side == "BID" {
+				bidPrices = append(bidPrices, detail)
+			} else if detail.Side == "ASK" {
+				askPrices = append(askPrices, detail)
+			}
+		}
+
+		// 确定需要多少行
+		maxRows := len(bidPrices)
+		if len(askPrices) > maxRows {
+			maxRows = len(askPrices)
+		}
+
+		// 如果没有任何报价，至少创建一行基本信息
+		if maxRows == 0 {
+			// 债券代码
+			f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), group.ISIN)
+
+			// 消息元数据
+			f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIndex), group.MessageID)
+			f.SetCellValue(sheetName, fmt.Sprintf("K%d", rowIndex), group.MessageType)
+			f.SetCellValue(sheetName, fmt.Sprintf("L%d", rowIndex), group.QuoteTime.Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("M%d", rowIndex), time.UnixMilli(group.Timestamp).Format("2006-01-02 15:04:05.000"))
+			rowIndex++
+			continue
+		}
+
+		// 填充每一行数据
+		for i := 0; i < maxRows; i++ {
+			// 债券代码
+			f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIndex), group.ISIN)
+
+			// 买方数据
+			if i < len(bidPrices) {
+				bid := bidPrices[i]
+				f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIndex), bid.Price)
+				if bid.Yield != nil {
+					f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIndex), *bid.Yield)
+				}
+				f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIndex), bid.OrderQty)
+				f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIndex), bid.QuoteTime.Format("2006-01-02 15:04:05.000"))
+				f.SetCellValue(sheetName, fmt.Sprintf("N%d", rowIndex), bid.BrokerID)
+			}
+
+			// 卖方数据
+			if i < len(askPrices) {
+				ask := askPrices[i]
+				f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIndex), ask.Price)
+				if ask.Yield != nil {
+					f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIndex), *ask.Yield)
+				}
+				f.SetCellValue(sheetName, fmt.Sprintf("H%d", rowIndex), ask.OrderQty)
+				f.SetCellValue(sheetName, fmt.Sprintf("I%d", rowIndex), ask.QuoteTime.Format("2006-01-02 15:04:05.000"))
+				f.SetCellValue(sheetName, fmt.Sprintf("O%d", rowIndex), ask.BrokerID)
+			}
+
+			// 消息元数据
+			f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIndex), group.MessageID)
+			f.SetCellValue(sheetName, fmt.Sprintf("K%d", rowIndex), group.MessageType)
+			f.SetCellValue(sheetName, fmt.Sprintf("L%d", rowIndex), group.QuoteTime.Format("2006-01-02 15:04:05.000"))
+			f.SetCellValue(sheetName, fmt.Sprintf("M%d", rowIndex), time.UnixMilli(group.Timestamp).Format("2006-01-02 15:04:05.000"))
+
+			rowIndex++
+		}
 	}
 
 	// 设置列宽
