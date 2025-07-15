@@ -121,8 +121,8 @@ func UploadFile(filePath, fileName, md5 string, headers map[string]string, ossIn
 
 	// 解析响应
 	type OssUploadResp struct {
-		OssId  string `json:"ossId"`
-		OssUrl string `json:"ossUrl"`
+		OssId  string `json:"ossId" mapstructure:"ossId"`
+		OssUrl string `json:"ossUrl" mapstructure:"ossUrl"`
 	}
 
 	var ossUploadResp OssUploadResp

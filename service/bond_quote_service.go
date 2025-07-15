@@ -92,7 +92,7 @@ type ParsedQuote struct {
 	Payload QuotePriceData   // askPrices / bidPrices / securityId
 }
 
-// ParseBondQuote 把 STOMP body 原始 JSON 解析成领域对象
+// ParseBondQuote 把 STOMP body 原始 JSON 解析成 ParsedQuote
 func ParseBondQuote(raw []byte) (*ParsedQuote, error) {
 	msg := msgPool.Get().(*BondQuoteMessage)
 	defer msgPool.Put(msg)

@@ -115,12 +115,12 @@ type EncryptedRequest struct {
 	ClientId string `json:"clientId"` // 客户端标识符，用于区分不同客户端
 }
 
-// EncryptedNoLoginRequest 无需登录的加密请求结构体
-type EncryptedNoLoginRequest struct {
-	ReqMsg   string `json:"reqMsg"`   // AES加密后的请求内容（Base64编码）
-	ReqKey   string `json:"reqKey"`   // RSA加密后的AES密钥（Base64编码）
-	ClientId string `json:"clientId"` // 客户端标识符
-}
+// // EncryptedNoLoginRequest 无需登录的加密请求结构体
+// type EncryptedNoLoginRequest struct {
+// 	ReqMsg   string `json:"reqMsg"`   // AES加密后的请求内容（Base64编码）
+// 	ReqKey   string `json:"reqKey"`   // RSA加密后的AES密钥（Base64编码）
+// 	ClientId string `json:"clientId"` // 客户端标识符
+// }
 
 // EncryptedResponse 服务器返回的加密响应格式
 type EncryptedResponse struct {
@@ -161,38 +161,6 @@ func main() {
 	if err != nil {
 		log.Fatal("数据库连接失败:", err)
 	}
-
-	// // 模拟输入 - 使用反引号包裹原始JSON字符串，避免转义问题
-	// rawjson := []byte(`{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}`)
-
-	// // 本地测试：直接调用解析函数
-	// fmt.Println("开始本地测试解析...")
-	// parsed, err := service.ParseBondQuote(rawjson)
-	// if err != nil {
-	// 	fmt.Printf("解析失败: %v\n", err)
-	// } else {
-	// 	quoteCount := len(parsed.Payload.AskPrices) + len(parsed.Payload.BidPrices)
-	// 	fmt.Printf("解析成功: SecurityID=%s, QuoteCount=%d\n", parsed.Payload.SecurityID, quoteCount)
-	// 	// 解析成功: SecurityID=HK0000096021, QuoteCount=2
-	// 	// 消息详情: MessageID=D1KNERRXUNB003EKWSWG, MessageType=BOND_ORDER_BOOK_MSG, SendTime=1751607143922
-	// 	fmt.Printf("消息详情: MessageID=%s, MessageType=%s, SendTime=%d\n",
-	// 		parsed.Meta.Data.MessageID, parsed.Meta.Data.MessageType, parsed.Meta.SendTime)
-
-	// 	// 插入数据库测试
-	// 	if err := service.InsertBatch(db, []*service.ParsedQuote{parsed}); err != nil {
-	// 		fmt.Printf("数据库插入失败: %v\n", err)
-	// 	} else {
-	// 		fmt.Println("数据库插入成功")
-
-	// 		// 验证数据是否已插入
-	// 		var detailCount int64
-	// 		var latestCount int64
-	// 		db.Model(&model.BondQuoteDetail{}).Count(&detailCount)
-	// 		db.Model(&model.BondLatestQuote{}).Count(&latestCount)
-	// 		fmt.Printf("数据库验证: 明细表记录数=%d, 最新表记录数=%d\n", detailCount, latestCount)
-	// 	}
-	// }
-	// RawChan <- rawjson
 
 	exportConfig := config.GetExportConfig()
 	// 每小时导出最新行情数据
@@ -394,8 +362,6 @@ func (c *StompClient) connectWebSocket(wssURL string) error {
 	// headers.Set("Authorization", "Bearer "+c.token)
 	// 自定义token头（服务器可能需要）
 	headers.Set("token", c.token)
-	// Origin头（如果服务器需要CORS验证可以启用）
-	// headers.Set("Origin", "https://adenapi.cstm.adenfin.com")
 	// 用户代理标识
 	headers.Set("User-Agent", "Go-WebSocket-Client/1.0")
 
