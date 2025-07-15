@@ -219,7 +219,8 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 	fmt.Print("发送钉钉消息: ", url)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := dtalk.DTalkSendTextMsg(ctx, url); err != nil {
+	message := fmt.Sprintf("%s下载链接%s", time.Now().Format("2006-01-02 15:04:05"), url)
+	if err := dtalk.DTalkSendTextMsg(ctx, message); err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return fmt.Errorf("发送钉钉消息超时: %w", err)
 		}

@@ -181,13 +181,13 @@ func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushD
 
 // GetTodayTableName 获取当天表名
 func GetTodayDetailTableName() string {
-	// return fmt.Sprintf("t_bond_quote_detail_%s", time.Now().Format("20060102"))
-	return "t_bond_quote_detail"
+	return fmt.Sprintf("t_bond_quote_detail_%s", time.Now().Format("20060102"))
+	// return "t_bond_quote_detail"
 }
 
 func GetTodayLatestTableName() string {
-	// return fmt.Sprintf("t_bond_latest_quote_%s", time.Now().Format("20060102"))
-	return "t_bond_latest_quote"
+	return fmt.Sprintf("t_bond_latest_quote_%s", time.Now().Format("20060102"))
+	// return "t_bond_latest_quote"
 
 }
 

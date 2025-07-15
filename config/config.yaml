@@ -44,12 +44,12 @@ dataProcess:
 export:
   path: "export/bond_quote"
   # url: "https://oss-sit.fosunhanig.com/oss/v1/Upload/Public"
-  url: "http://sit-local.fotechwealth.com.local/service-oss.trade/oss/v1/Upload/Public" 测试环境 uat环境换成服务名
+  url: "http://sit-local.fotechwealth.com.local/service-oss.trade/oss/v1/Upload/Public" #测试环境 uat环境换成服务名
   timeout: 30 # 超时时间（秒）
   retentionDays: 7
 
 # 钉钉配置
 dtalk:
   server: "https://oapi.dingtalk.com"
-  accesstoken: "access_token"
-  secret: "secret"
+  accesstoken: "d928f0d05bef67336f35e6dd1c61a5e868d77543240a83fcd6f0594dc4a94436"
+  secret: "SECe9f60d4c48716eb90b25866d0cc3e8277a4e77b453df2618c1bd6a7023865a86"
