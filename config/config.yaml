@@ -43,7 +43,8 @@ dataProcess:
 # 文件导出配置
 export:
   path: "export/bond_quote"
-  url: "http://oss-sit.fosunhanig.com/oss/v1/Upload/Public"
+  # url: "https://oss-sit.fosunhanig.com/oss/v1/Upload/Public"
+  url: "http://sit-local.fotechwealth.com.local/service-oss.trade/oss/v1/Upload/Public" 测试环境 uat环境换成服务名
   timeout: 30 # 超时时间（秒）
   retentionDays: 7
 

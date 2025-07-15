@@ -207,6 +207,7 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 	requestheaders := map[string]string{
 		"x-request-id":     "345678876",
 		"x-origin-service": "wealth-bond-quote-service",
+		"x-uin":            "123456",
 	}
 	_, url, err := oss.UploadFile(filename, fileNameOnly, "", requestheaders, &ossInfo)
 	if err != nil {
