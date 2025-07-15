@@ -204,8 +204,11 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 		Timeout: ossConfig.Timeout,
 	}
 	fileNameOnly := filepath.Base(filename)
-
-	_, url, err := oss.UploadFile(filename, fileNameOnly, "", nil, &ossInfo)
+	requestheaders := map[string]string{
+		"x-request-id":     "345678876",
+		"x-origin-service": "wealth-bond-quote-service",
+	}
+	_, url, err := oss.UploadFile(filename, fileNameOnly, "", requestheaders, &ossInfo)
 	if err != nil {
 		return fmt.Errorf("上传文件到OSS失败: %w", err)
 	}

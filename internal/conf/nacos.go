@@ -34,7 +34,7 @@ var NacosKeys = map[string]string{
 
 	"mysql.fund":   "cipher-mysql-funddb-ro@@mkt@@mkt",
 	"mysql.symbol": "cipher-mysql-symboldb-ro@@mkt@@mkt",
-	"mysql.bond":   "cipher-mysql-bonddb-ro@@mkt@@mkt",
+	"mysql.bond":   "cipher-mysql-bonddb-ro@@mkt@@mkt", // 后面改成读写
 	"mysql.amount": "cipher-mysql-amountdb-rw@@mkt@@mkt",
 	"mysql.public": "cipher-mysql-publicdb-ro@@mkt@@mkt",
 	"mysql.forex":  "cipher-mysql-forexdb-ro@@mkt@@mkt",
