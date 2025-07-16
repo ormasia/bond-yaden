@@ -30,26 +30,28 @@ func NewExportLatestQuotesService(db *gorm.DB) *ExportLatestQuotesService {
 }
 
 // StartHourlyExport 启动每小时导出任务
-func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string) {
+func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string, interval int) {
 	// 确保导出目录存在
 	if err := os.MkdirAll(exportDir, 0755); err != nil {
 		log.Fatalf("创建导出目录失败: %v", err)
 	}
 
-	// 计算下一个整点时间
-	now := time.Now()
-	nextHour := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
-	initialDelay := nextHour.Sub(now)
+	// // 计算下一个整点时间
+	// now := time.Now()
+	// nextHour := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
+	// initialDelay := nextHour.Sub(now)
 
-	log.Printf("债券最新行情导出服务已启动，将在 %s 后开始首次导出", initialDelay)
+	// log.Printf("债券最新行情导出服务已启动，将在 %s 后开始首次导出", initialDelay)
 
+	intervalDuration := time.Duration(interval) * time.Minute
+	log.Printf("债券最新行情导出服务已启动，每 %d 分钟执行一次导出", interval)
 	// 启动定时任务
-	go func() {
+	go func(intervalDuration time.Duration) {
 		// 等待到下一个整点
-		time.Sleep(initialDelay)
+		// time.Sleep(initialDelay)
 
 		// 每小时执行一次导出
-		ticker := time.NewTicker(1 * time.Hour)
+		ticker := time.NewTicker(intervalDuration)
 		defer ticker.Stop()
 
 		for {
@@ -64,14 +66,15 @@ func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string) {
 
 			<-ticker.C // 等待下一个小时
 		}
-	}()
+	}(intervalDuration)
 }
 
 // ExportToExcel 导出最新行情到Excel文件
 func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
+	tableName := GetTodayLatestTableName()
 	// 查询所有最新行情数据
 	var latestQuotes []model.BondLatestQuote
-	if err := s.db.Find(&latestQuotes).Error; err != nil {
+	if err := s.db.Table(tableName).Find(&latestQuotes).Error; err != nil {
 		return fmt.Errorf("查询最新行情数据失败: %w", err)
 	}
 

@@ -163,7 +163,7 @@ func main() {
 
 	exportConfig := config.GetExportConfig()
 	// 每小时导出最新行情数据
-	service.NewExportLatestQuotesService(db).StartHourlyExport(exportConfig.Path)
+	service.NewExportLatestQuotesService(db).StartHourlyExport(exportConfig.Path, exportConfig.Interval)
 
 	// 每周创建表
 	service.NewCreateTableService(db).StartWeeklyTableCreation()

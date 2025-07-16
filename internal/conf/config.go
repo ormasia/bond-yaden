@@ -53,6 +53,7 @@ type DataProcessConfig struct {
 
 // ExportConfig 文件导出配置
 type ExportConfig struct {
+	Interval      int    `yaml:"interval"` // 导出间隔时间（分钟）
 	Path          string `yaml:"path"`
 	URL           string `yaml:"url"`
 	Timeout       int    `yaml:"timeout"` // 超时时间（秒）
