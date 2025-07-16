@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -32,11 +31,11 @@ type BondQuoteDetail struct {
 // 	return "t_bond_quote_detail"
 // }
 
-// TableName 设置表名
-func (BondQuoteDetail) TableName() string {
-	datestr := time.Now().Format("20060102")
-	return fmt.Sprintf("t_bond_quote_detail_%s", datestr)
-}
+// // TableName 设置表名
+// func (BondQuoteDetail) TableName() string {
+// 	datestr := time.Now().Format("20060102")
+// 	return fmt.Sprintf("t_bond_quote_detail_%s", datestr)
+// }
 
 // BondLatestQuote 债券最新行情表
 type BondLatestQuote struct {
@@ -54,8 +53,8 @@ type BondLatestQuote struct {
 // 	return "t_bond_latest_quote"
 // }
 
-// TableName 设置表名
-func (BondLatestQuote) TableName() string {
-	datestr := time.Now().Format("20060102")
-	return fmt.Sprintf("t_bond_latest_quote_%s", datestr)
-}
+// // TableName 设置表名
+// func (BondLatestQuote) TableName() string {
+// 	datestr := time.Now().Format("20060102")
+// 	return fmt.Sprintf("t_bond_latest_quote_%s", datestr)
+// }

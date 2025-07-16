@@ -2,3 +2,4 @@
 export/
 .env
 config/sit*
+*.db
