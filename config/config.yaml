@@ -1,56 +1,56 @@
-app: # RESTful
-  name: "wealth-bond-quote-service"
-  mode: debug # server mode: release, debug, test
-  addr: ":8081"
-  ver: "0.0.1"
-  prefork: false # 否启用多进程模式
+# app: # RESTful
+#   name: "wealth-bond-quote-service"
+#   mode: debug # server mode: release, debug, test
+#   addr: ":8081"
+#   ver: "0.0.1"
+#   prefork: false # 否启用多进程模式
 
-log:
-  path: "data/logs/wealth-bond-quote-service/wealth-bond-quote-service.log"
-  level: "debug"
-  size: 1073741824
-  count: 10
+# log:
+#   path: "data/logs/wealth-bond-quote-service/wealth-bond-quote-service.log"
+#   level: "debug"
+#   size: 1073741824
+#   count: 10
 
-# 亚丁ATS系统配置
-adenATS:
-  baseURL: "https://adenapi.cstm.adenfin.com"
-  wssURL: "wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws"
-  username: "ATSTEST10001"
-  password: "Abc12345"
-  smsCode: "1234"
-  clientId: "30021"
-  publicKey: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB"
-  # 连接配置
-  timeout: 30 # 连接超时时间（秒）
-  heartbeat: 20000 # 心跳间隔（毫秒）
-  reconnectInterval: 5000 # 重连间隔（毫秒）
-  maxReconnectAttempts: 10 # 最大重连次数
+# # 亚丁ATS系统配置
+# adenATS:
+#   baseURL: "https://adenapi.cstm.adenfin.com"
+#   wssURL: "wss://adenapi.cstm.adenfin.com/message-gateway/message/atsapi/ws"
+#   username: "ATSTEST10001"
+#   password: "Abc12345"
+#   smsCode: "1234"
+#   clientId: "30021"
+#   publicKey: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCTCY4u102mtUlVEyUMlXOkflPLdWN+ez5IDcLiNzw2ZkiEY17U4lk8iMx7yTEO/ZWCKIEdQV+U6tplJ98X3I/Py/DzWd1L7IPE6mZgclfcXg+P4ocaHPsKgAodc4G1W9jTu2d6obL3d33USCD0soGYE6fkf8hk7EPKhgNf4iUPCwIDAQAB"
+#   # 连接配置
+#   timeout: 30 # 连接超时时间（秒）
+#   heartbeat: 20000 # 心跳间隔（毫秒）
+#   reconnectInterval: 5000 # 重连间隔（毫秒）
+#   maxReconnectAttempts: 10 # 最大重连次数
 
-# 数据处理配置
-dataProcess:
-  # 缓冲区配置
-  rawBufferSize: 20000    # 原始数据缓冲区大小
-  parsedBufferSize: 4000  # 解析后数据缓冲区大小
-  deadBufferSize: 1000    # 死信队列缓冲区大小
-  # 工作线程配置
-  workerNum: 8            # 数据处理工作线程数
-  parserWorkerNum: 4      # 数据解析工作线程数
-  dbWorkerNum: 2          # 数据库写入工作线程数
-  # 批处理配置
-  batchSize: 300          # 批处理大小
-  flushDelayMs: 100       # 刷新延迟（毫秒）
+# # 数据处理配置
+# dataProcess:
+#   # 缓冲区配置
+#   rawBufferSize: 20000    # 原始数据缓冲区大小
+#   parsedBufferSize: 4000  # 解析后数据缓冲区大小
+#   deadBufferSize: 1000    # 死信队列缓冲区大小
+#   # 工作线程配置
+#   workerNum: 8            # 数据处理工作线程数
+#   parserWorkerNum: 4      # 数据解析工作线程数
+#   dbWorkerNum: 2          # 数据库写入工作线程数
+#   # 批处理配置
+#   batchSize: 300          # 批处理大小
+#   flushDelayMs: 100       # 刷新延迟（毫秒）
 
-# 文件导出配置
-export:
-  interval: 60 # 导出间隔时间
-  path: "export/bond_quote"
-  # url: "https://oss-sit.fosunhanig.com/oss/v1/Upload/Public"
-  url: "http://sit-local.fotechwealth.com.local/service-oss.trade/oss/v1/Upload/Public" #测试环境 uat环境换成服务名
-  timeout: 30 # 超时时间（秒）
-  retentionDays: 7
+# # 文件导出配置
+# export:
+#   interval: 60 # 导出间隔时间
+#   path: "export/bond_quote"
+#   # url: "https://oss-sit.fosunhanig.com/oss/v1/Upload/Public"
+#   url: "http://sit-local.fotechwealth.com.local/service-oss.trade/oss/v1/Upload/Public" #测试环境 uat环境换成服务名
+#   timeout: 30 # 超时时间（秒）
+#   retentionDays: 7
 
-# 钉钉配置
-dtalk:
-  server: "https://oapi.dingtalk.com"
-  accesstoken: "d928f0d05bef67336f35e6dd1c61a5e868d77543240a83fcd6f0594dc4a94436"
-  secret: "SECe9f60d4c48716eb90b25866d0cc3e8277a4e77b453df2618c1bd6a7023865a86"
+# # 钉钉配置
+# dtalk:
+#   server: "https://oapi.dingtalk.com"
+#   accesstoken: "d928f0d05bef67336f35e6dd1c61a5e868d77543240a83fcd6f0594dc4a94436"
+#   secret: "SECe9f60d4c48716eb90b25866d0cc3e8277a4e77b453df2618c1bd6a7023865a86"
