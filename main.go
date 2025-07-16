@@ -30,14 +30,13 @@ import (
 	"sync"
 	"time"
 	config "wealth-bond-quote-service/internal/conf"
+	"wealth-bond-quote-service/internal/dataSource"
 	utils "wealth-bond-quote-service/pkg/crypto_utils"
 	"wealth-bond-quote-service/service"
 
 	"github.com/go-stomp/stomp/v3"
 	"github.com/gorilla/websocket"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	_ "modernc.org/sqlite"
 
 	"github.com/google/uuid"
@@ -152,15 +151,15 @@ func main() {
 
 	log.Printf("使用配置 - ATS地址: %s, 用户: %s", adenConfig.BaseURL, adenConfig.Username)
 
-	var db *gorm.DB
-	db, err := gorm.Open(sqlite.Dialector{
-		DriverName: "sqlite",
-		DSN:        "test.db",
-	}, &gorm.Config{})
-
-	if err != nil {
-		log.Fatal("数据库连接失败:", err)
-	}
+	// var db *gorm.DB
+	// db, err := gorm.Open(sqlite.Dialector{
+	// 	DriverName: "sqlite",
+	// 	DSN:        "test.db",
+	// }, &gorm.Config{})
+	// if err != nil {
+	// 	log.Fatal("数据库连接失败:", err)
+	// }
+	db := dataSource.GetDBConn("bond")
 
 	exportConfig := config.GetExportConfig()
 	// 每小时导出最新行情数据
