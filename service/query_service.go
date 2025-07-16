@@ -10,44 +10,44 @@ import (
 	"gorm.io/gorm"
 )
 
-// 响应消息结构体
-type BondQuoteMessage struct {
-	Data          BondQuoteData `json:"data"`
-	SendTime      int64         `json:"sendTime"`
-	WsMessageType string        `json:"wsMessageType"`
-}
+// // 响应消息结构体
+// type BondQuoteMessage struct {
+// 	Data          BondQuoteData `json:"data"`
+// 	SendTime      int64         `json:"sendTime"`
+// 	WsMessageType string        `json:"wsMessageType"`
+// }
 
-type BondQuoteData struct {
-	QuotePriceData string `json:"data"` // 内部JSON字符串
-	MessageID      string `json:"messageId"`
-	MessageType    string `json:"messageType"`
-	Organization   string `json:"organization"`
-	ReceiverID     string `json:"receiverId"`
-	Timestamp      int64  `json:"timestamp"`
-}
+// type BondQuoteData struct {
+// 	QuotePriceData string `json:"data"` // 内部JSON字符串
+// 	MessageID      string `json:"messageId"`
+// 	MessageType    string `json:"messageType"`
+// 	Organization   string `json:"organization"`
+// 	ReceiverID     string `json:"receiverId"`
+// 	Timestamp      int64  `json:"timestamp"`
+// }
 
-// 报价数据结构体 - 用于解析内部JSON字符串
-type QuotePriceData struct {
-	AskPrices  []QuotePrice `json:"askPrices"`
-	BidPrices  []QuotePrice `json:"bidPrices"`
-	SecurityID string       `json:"securityId"`
-}
+// // 报价数据结构体 - 用于解析内部JSON字符串
+// type QuotePriceData struct {
+// 	AskPrices  []QuotePrice `json:"askPrices"`
+// 	BidPrices  []QuotePrice `json:"bidPrices"`
+// 	SecurityID string       `json:"securityId"`
+// }
 
-// 报价结构体
-type QuotePrice struct {
-	BrokerID         string  `json:"brokerId"`
-	IsTbd            string  `json:"isTbd"`
-	IsValid          string  `json:"isValid"`
-	MinTransQuantity float64 `json:"minTransQuantity"`
-	OrderQty         float64 `json:"orderQty"`
-	Price            float64 `json:"price"`
-	QuoteOrderNo     string  `json:"quoteOrderNo"`
-	QuoteTime        int64   `json:"quoteTime"`
-	SecurityID       string  `json:"securityId"`
-	SettleType       string  `json:"settleType"`
-	Side             string  `json:"side"`
-	Yield            float64 `json:"yield"`
-}
+// // 报价结构体
+// type QuotePrice struct {
+// 	BrokerID         string  `json:"brokerId"`
+// 	IsTbd            string  `json:"isTbd"`
+// 	IsValid          string  `json:"isValid"`
+// 	MinTransQuantity float64 `json:"minTransQuantity"`
+// 	OrderQty         float64 `json:"orderQty"`
+// 	Price            float64 `json:"price"`
+// 	QuoteOrderNo     string  `json:"quoteOrderNo"`
+// 	QuoteTime        int64   `json:"quoteTime"`
+// 	SecurityID       string  `json:"securityId"`
+// 	SettleType       string  `json:"settleType"`
+// 	Side             string  `json:"side"`
+// 	Yield            float64 `json:"yield"`
+// }
 
 // BondQueryService 债券行情查询服务
 type BondQueryService struct {
@@ -271,7 +271,7 @@ func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) (string, er
 	if err := s.db.Table(tableName).
 		Select("quote_time, message_id, message_type, timestamp, isin").
 		Where("quote_time BETWEEN ? AND ?", startDateTime, endDateTime).
-		Group("message_id, isin").  // 按消息ID和债券代码分组，因为同一消息ID的其他字段应该相同
+		Group("message_id, isin"). // 按消息ID和债券代码分组，因为同一消息ID的其他字段应该相同
 		Order("quote_time, message_id").
 		Find(&messageGroups).Error; err != nil {
 		return "", fmt.Errorf("查询分组数据失败: %w", err)
