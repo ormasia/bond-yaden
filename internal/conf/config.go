@@ -86,6 +86,9 @@ var (
 
 	exportConfig *ExportConfig
 	onceExport   sync.Once
+
+	logConfig *LogCfg
+	onceLog   sync.Once
 )
 
 // GetAdenATSConfig 获取亚丁ATS配置
@@ -119,4 +122,15 @@ func GetExportConfig() *ExportConfig {
 		}
 	})
 	return exportConfig
+}
+
+// GetLogConfig 获取应用日志配置
+func GetLogConfig() *LogCfg {
+	onceLog.Do(func() {
+		logConfig = &LogCfg{}
+		if err := GetCfg("log", logConfig); err != nil {
+			fmt.Printf("警告: 获取应用日志配置失败: %v\n", err)
+		}
+	})
+	return logConfig
 }

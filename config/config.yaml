@@ -6,7 +6,7 @@ app: # RESTful
   prefork: false # 否启用多进程模式
 
 log:
-  path: "/data/logs/wealth-bond-quote-service/wealth-bond-quote-service.log"
+  path: "data/logs/wealth-bond-quote-service/wealth-bond-quote-service.log"
   level: "debug"
   size: 1073741824
   count: 10

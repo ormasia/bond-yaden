@@ -55,10 +55,9 @@ func SetLog(fileName string, level int) {
 
 func SetLogFileName(fileName string) error {
 	std.fileName = fileName
-	// 判断目录是否存在
-	index := strings.LastIndex(fileName, "/")
-	if index > 0 {
-		dir := string([]byte(fileName)[0:index])
+	// 判断目录是否存在，使用 filepath.Dir 获取目录路径
+	dir := filepath.Dir(fileName)
+	if dir != "." && dir != "" {
 		CreateMultiDir(dir)
 	}
 	var err error

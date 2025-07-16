@@ -32,6 +32,7 @@ import (
 	config "wealth-bond-quote-service/internal/conf"
 	"wealth-bond-quote-service/internal/dataSource"
 	utils "wealth-bond-quote-service/pkg/crypto_utils"
+	logger "wealth-bond-quote-service/pkg/log"
 	"wealth-bond-quote-service/service"
 
 	"github.com/go-stomp/stomp/v3"
@@ -68,6 +69,19 @@ func init() {
 				}
 			}
 			if initCfgOK {
+				// 日志配置
+				logConfig := config.GetLogConfig()
+				logger.SetLogLevel(logConfig.Level)
+				logger.SetLogFileName(logConfig.Path)
+				fmt.Printf("日志配置 - 路径: %s, 级别: %s\n", logConfig.Path, logConfig.Level)
+
+				cfg := config.GetDataProcessConfig()
+				rawCap = cfg.RawBufferSize
+				parsedCap = cfg.ParsedBufferSize
+				workerNum = cfg.WorkerNum
+				batchSize = cfg.BatchSize
+				flushDelay = time.Duration(cfg.FlushDelayMs) * time.Millisecond
+
 				fmt.Println("init from Nacos OK!")
 				return
 			}
@@ -77,13 +91,6 @@ func init() {
 	}
 	config.InitFromLocalFile("config", "yaml")
 	fmt.Println("init from local YAML file!")
-
-	cfg := config.GetDataProcessConfig()
-	rawCap = cfg.RawBufferSize
-	parsedCap = cfg.ParsedBufferSize
-	workerNum = cfg.WorkerNum
-	batchSize = cfg.BatchSize
-	flushDelay = time.Duration(cfg.FlushDelayMs) * time.Millisecond
 }
 
 var (
@@ -146,19 +153,12 @@ const (
 // 4. 订阅债券行情消息
 // 5. 持续监听消息推送
 func main() {
+
 	// 获取亚丁ATS配置
 	adenConfig := config.GetAdenATSConfig()
 
-	log.Printf("使用配置 - ATS地址: %s, 用户: %s", adenConfig.BaseURL, adenConfig.Username)
+	logger.Debug("使用配置 - ATS地址: %s, 用户: %s", adenConfig.BaseURL, adenConfig.Username)
 
-	// var db *gorm.DB
-	// db, err := gorm.Open(sqlite.Dialector{
-	// 	DriverName: "sqlite",
-	// 	DSN:        "test.db",
-	// }, &gorm.Config{})
-	// if err != nil {
-	// 	log.Fatal("数据库连接失败:", err)
-	// }
 	db := dataSource.GetDBConn("bond")
 
 	exportConfig := config.GetExportConfig()
@@ -177,15 +177,18 @@ func main() {
 	// 使用加密通信协议，获取后续API调用所需的token
 	fmt.Println("第一步：登录获取Token...")
 	if err := client.login(adenConfig.Username, adenConfig.Password, adenConfig.SmsCode, adenConfig.PublicKey, adenConfig.BaseURL, adenConfig.ClientId); err != nil {
-		log.Fatal("登录失败:", err)
+		// log.Fatal("登录失败:", err)
+		logger.Fatal("登录失败: %v", err.Error())
 	}
-	fmt.Printf("登录成功，获取到Token: %s\n", client.token[:20]+"...")
+	// fmt.Printf("登录成功，获取到Token: %s\n", client.token[:20]+"...")
+	logger.Info("登录成功，获取到Token: %s", client.token[:20]+"...")
 
 	// 第二步：建立WebSocket连接
 	// 使用获取的token建立安全的WebSocket连接
 	fmt.Println("第二步：建立WebSocket连接...")
 	if err := client.connectWebSocket(adenConfig.WssURL); err != nil {
-		log.Fatal("WebSocket连接失败:", err)
+		// log.Fatal("WebSocket连接失败:", err)
+		logger.Fatal("WebSocket连接失败: %v", err.Error())
 	}
 	defer client.conn.Close() // 确保程序退出时关闭连接
 
@@ -193,7 +196,8 @@ func main() {
 	// 在WebSocket基础上建立STOMP消息协议连接
 	fmt.Println("第三步：建立STOMP连接...")
 	if err := client.connectStomp(); err != nil {
-		log.Fatal("STOMP连接失败:", err)
+		// log.Fatal("STOMP连接失败:", err)
+		logger.Fatal("STOMP连接失败: %v", err.Error())
 	}
 	defer client.stompConn.Disconnect() // 确保程序退出时断开STOMP连接
 
@@ -201,7 +205,8 @@ func main() {
 	// 订阅指定的消息队列，开始接收实时行情数据
 	fmt.Println("第四步：订阅行情消息...")
 	if err := client.subscribe(); err != nil {
-		log.Fatal("订阅失败:", err)
+		// log.Fatal("订阅失败:", err)
+		logger.Fatal("订阅失败: %v", err.Error())
 	}
 
 	// 第五步：启动后台处理工作协程
