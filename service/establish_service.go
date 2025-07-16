@@ -74,13 +74,13 @@ type EncryptedResponse struct {
 // StompClient STOMP客户端结构体
 // 封装WebSocket连接和STOMP协议连接，用于接收实时消息推送
 type StompClient struct {
-	conn      *websocket.Conn // WebSocket底层连接
-	stompConn *stomp.Conn     // STOMP协议连接，基于WebSocket
-	token     string          // 访问令牌，用于身份验证
+	Conn      *websocket.Conn // WebSocket底层连接
+	StompConn *stomp.Conn     // STOMP协议连接，基于WebSocket
+	Token     string          // 访问令牌，用于身份验证
 }
 
 // 登录获取Token
-func (c *StompClient) login(username, password, smsCode, publicKey, baseURL, clientID string) error {
+func (c *StompClient) Login(username, password, smsCode, publicKey, baseURL, clientID string) error {
 	// 构建登录请求
 	loginReq := LoginRequest{
 		Username: username,
@@ -173,12 +173,12 @@ func (c *StompClient) login(username, password, smsCode, publicKey, baseURL, cli
 		return fmt.Errorf("登录失败: %s", loginResp.Msg)
 	}
 
-	c.token = loginResp.Token
+	c.Token = loginResp.Token
 	return nil
 }
 
 // 建立WebSocket连接
-func (c *StompClient) connectWebSocket(wssURL string) error {
+func (c *StompClient) ConnectWebSocket(wssURL string) error {
 	// 构建带token的URL
 	u, err := url.Parse(wssURL)
 	if err != nil {
@@ -187,7 +187,7 @@ func (c *StompClient) connectWebSocket(wssURL string) error {
 
 	// 添加token参数
 	q := u.Query()
-	q.Set("token", "Bearer "+c.token)
+	q.Set("token", "Bearer "+c.Token)
 	u.RawQuery = q.Encode()
 
 	fmt.Printf("连接地址: %s\n", u.String())
@@ -208,7 +208,7 @@ func (c *StompClient) connectWebSocket(wssURL string) error {
 	// 标准的Bearer Token认证头
 	// headers.Set("Authorization", "Bearer "+c.token)
 	// 自定义token头（服务器可能需要）
-	headers.Set("token", c.token)
+	headers.Set("token", c.Token)
 	// 用户代理标识
 	headers.Set("User-Agent", "Go-WebSocket-Client/1.0")
 
@@ -229,12 +229,12 @@ func (c *StompClient) connectWebSocket(wssURL string) error {
 	}
 
 	fmt.Println("WebSocket连接成功!")
-	c.conn = conn
+	c.Conn = conn
 	return nil
 }
 
 // 建立STOMP连接
-func (c *StompClient) connectStomp() error {
+func (c *StompClient) ConnectStomp() error {
 	// 创建STOMP连接选项配置
 	options := []func(*stomp.Conn) error{
 		// 登录凭据（空用户名密码，使用token认证）
@@ -245,7 +245,7 @@ func (c *StompClient) connectStomp() error {
 		// 用于保持连接活跃和检测连接状态
 		stomp.ConnOpt.HeartBeat(30*time.Second, 120*time.Second),
 		// 自定义STOMP头部信息
-		stomp.ConnOpt.Header("token", c.token),            // 访问令牌
+		stomp.ConnOpt.Header("token", c.Token),            // 访问令牌
 		stomp.ConnOpt.Header("imei", "test-device-001"),   // 设备IMEI标识
 		stomp.ConnOpt.Header("appOs", "windows"),          // 应用运行的操作系统
 		stomp.ConnOpt.Header("appVersion", "1.0.0"),       // 应用版本号
@@ -253,18 +253,18 @@ func (c *StompClient) connectStomp() error {
 	}
 
 	// 使用WebSocket连接创建STOMP连接
-	stompConn, err := stomp.Connect(NewWebSocketNetConn(c.conn), options...)
+	stompConn, err := stomp.Connect(NewWebSocketNetConn(c.Conn), options...)
 	if err != nil {
 		return fmt.Errorf("STOMP连接失败: %v", err)
 	}
 
 	fmt.Println("STOMP连接成功!")
-	c.stompConn = stompConn
+	c.StompConn = stompConn
 	return nil
 }
 
 // 订阅消息
-func (c *StompClient) subscribe(rawChan chan []byte) error {
+func (c *StompClient) Subscribe(rawChan chan []byte) error {
 	// 订阅目标地址：债券行情消息队列
 	// /user/queue/v1/apiatsbondquote/messages
 	// - /user: 用户专用队列前缀
@@ -280,7 +280,7 @@ func (c *StompClient) subscribe(rawChan chan []byte) error {
 	// stomp.AckAuto: 消息接收后自动确认，无需手动ACK
 	subcribeId := uuid.New().String()
 	// 订阅消息，并添加自定义消息头
-	sub, err := c.stompConn.Subscribe(
+	sub, err := c.StompConn.Subscribe(
 		destination,
 		stomp.AckAuto,
 		stomp.SubscribeOpt.Header("uuid", subcribeId),               // 客户端标识符
