@@ -4,3 +4,5 @@ export/
 .env
 config/sit*
 *.db
+.VSCodeCounter/
+.kiro/

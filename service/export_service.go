@@ -35,6 +35,7 @@ func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string, interval
 	// 确保导出目录存在
 	if err := os.MkdirAll(exportDir, 0755); err != nil {
 		logger.Fatal("创建导出目录失败: %v", err)
+		return
 	}
 
 	// // 计算下一个整点时间

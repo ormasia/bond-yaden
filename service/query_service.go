@@ -321,9 +321,10 @@ func (s *BondQueryService) ExportTimeRangeData(param TimeRangeParam) (string, er
 		var askPrices []model.BondQuoteDetail
 
 		for _, detail := range details {
-			if detail.Side == "BID" {
+			switch detail.Side {
+			case "BID":
 				bidPrices = append(bidPrices, detail)
-			} else if detail.Side == "ASK" {
+			case "ASK":
 				askPrices = append(askPrices, detail)
 			}
 		}
@@ -530,7 +531,7 @@ func (s *BondQueryService) ExportCurrentLatestQuotes() (string, error) {
 	}
 
 	// 生成文件名
-	filename := fmt.Sprintf("bond_latest_quotes_%s.xlsx", time.Now().Format("20060102_150405"))
+	filename := fmt.Sprintf("bond_latest_quotes_query_%s.xlsx", time.Now().Format("20060102_150405"))
 
 	// 保存文件
 	if err := f.SaveAs(filename); err != nil {

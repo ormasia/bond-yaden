@@ -17,6 +17,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -25,7 +26,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 	utils "wealth-bond-quote-service/pkg/crypto_utils"
 
@@ -265,7 +265,7 @@ func (c *StompClient) ConnectStomp() error {
 }
 
 // 订阅消息
-func (c *StompClient) Subscribe(rawChan chan []byte, errChan chan error, mwg *sync.WaitGroup) error {
+func (c *StompClient) Subscribe(ctx context.Context, rawChan chan []byte, errChan chan error /*, mwg *sync.WaitGroup*/) error {
 	// 订阅目标地址：债券行情消息队列
 	// /user/queue/v1/apiatsbondquote/messages
 	// - /user: 用户专用队列前缀
@@ -295,15 +295,21 @@ func (c *StompClient) Subscribe(rawChan chan []byte, errChan chan error, mwg *sy
 
 	fmt.Println("订阅成功，开始监听消息...")
 
-	mwg.Add(1)
-	// 启动消息监听协程
-	go func() {
-		defer mwg.Done()
-		for msg := range sub.C {
+	// mwg.Add(1)
+	// // 启动消息监听协程
+	// go func() {
+	// 	defer mwg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			// 上下文取消，退出监听
+			fmt.Println("上下文取消，停止消息监听")
+			return nil
+		case msg := <-sub.C:
 			if msg.Err != nil {
 				logger.Error("消息错误: %v", msg.Err)
 				errChan <- msg.Err
-				return
+				return nil
 			}
 
 			// 将rawjson发送到RawChan通道
@@ -329,9 +335,11 @@ func (c *StompClient) Subscribe(rawChan chan []byte, errChan chan error, mwg *sy
 			}
 			fmt.Print("==================================\n")
 		}
-	}()
+	}
 
-	return nil
+	// }()
+
+	// return nil
 }
 
 // WebSocketNetConn WebSocket网络连接适配器

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -83,15 +84,13 @@ func init() {
 	fmt.Println("init from local YAML file!")
 }
 
-var (
-	wg         sync.WaitGroup
-	RawChan    = make(chan []byte, rawCap)
-	ParsedChan = make(chan *service.ParsedQuote, parsedCap)
-	DeadChan   = make(chan []byte, 1000) // 解析失败
-)
+var ()
 
 func main() {
-
+	var wg sync.WaitGroup
+	RawChan := make(chan []byte, rawCap)
+	ParsedChan := make(chan *service.ParsedQuote, parsedCap)
+	DeadChan := make(chan []byte, 1000) // 解析失败
 	db := dataSource.GetDBConn("bond")
 
 	exportConfig := config.GetExportConfig()
@@ -102,7 +101,8 @@ func main() {
 	service.NewCreateTableService(db).StartWeeklyTableCreation()
 
 	errChan := make(chan error, 1)
-	go startMessageListener(errChan)
+	ctx, cancel := context.WithCancel(context.Background())
+	go startMessageListener(ctx, errChan, RawChan, &wg)
 
 	// 第五步：启动后台处理工作协程
 	bqs := service.NewBondQuoteService(db, &wg, RawChan, ParsedChan, DeadChan)
@@ -121,11 +121,11 @@ func main() {
 		select {
 		case err := <-errChan:
 			logger.Error("消息监听错误: %v", err)
-			go startMessageListener(errChan)
+			go startMessageListener(ctx, errChan, RawChan, &wg) // 重启监听
 		case <-interrupt:
 			fmt.Println("收到中断信号，正在退出...")
 			fmt.Println("正在断开连接...")
-
+			cancel() // 取消上下文，通知所有协程退出
 			// 优雅关闭：关闭 channels，等待 workers 完成
 			close(RawChan)
 			close(ParsedChan)
@@ -145,8 +145,10 @@ func main() {
 // 3. 建立STOMP协议连接
 // 4. 订阅债券行情消息
 // 5. 持续监听消息推送
-func startMessageListener(errChan chan error) {
-	var Mwg sync.WaitGroup
+func startMessageListener(ctx context.Context, errChan chan error, rawChan chan []byte, wg *sync.WaitGroup) {
+	// var Mwg sync.WaitGroup
+	wg.Add(1)
+	defer wg.Done() // 确保函数退出时调用 Done
 	// 获取亚丁ATS配置
 	adenConfig := config.GetAdenATSConfig()
 
@@ -162,6 +164,7 @@ func startMessageListener(errChan chan error) {
 	fmt.Println("第一步：登录获取Token...")
 	if err := client.Login(adenConfig.Username, adenConfig.Password, adenConfig.SmsCode, adenConfig.PublicKey, adenConfig.BaseURL, adenConfig.ClientId); err != nil {
 		logger.Fatal("登录失败: %v", err.Error())
+		return
 	}
 	logger.Info("登录成功，获取到Token: %s", client.Token[:20]+"...")
 
@@ -170,6 +173,7 @@ func startMessageListener(errChan chan error) {
 	fmt.Println("第二步：建立WebSocket连接...")
 	if err := client.ConnectWebSocket(adenConfig.WssURL); err != nil {
 		logger.Fatal("WebSocket连接失败: %v", err.Error())
+		return
 	}
 	defer client.Conn.Close() // 确保程序退出时关闭连接
 
@@ -178,14 +182,15 @@ func startMessageListener(errChan chan error) {
 	fmt.Println("第三步：建立STOMP连接...")
 	if err := client.ConnectStomp(); err != nil {
 		logger.Fatal("STOMP连接失败: %v", err.Error())
+		return
 	}
 	defer client.StompConn.Disconnect() // 确保程序退出时断开STOMP连接
 
 	// 第四步：订阅债券行情消息
 	// 订阅指定的消息队列，开始接收实时行情数据
 	fmt.Println("第四步：订阅行情消息...")
-	if err := client.Subscribe(RawChan, errChan, &Mwg); err != nil {
+	if err := client.Subscribe(ctx, rawChan, errChan /*, &Mwg*/); err != nil {
 		logger.Fatal("订阅失败: %v", err.Error())
+		return
 	}
-	Mwg.Wait()
 }
