@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -30,9 +29,10 @@ import (
 	"time"
 	utils "wealth-bond-quote-service/pkg/crypto_utils"
 
+	logger "wealth-bond-quote-service/pkg/log"
+
 	"github.com/go-stomp/stomp/v3"
 	"github.com/gorilla/websocket"
-
 	_ "modernc.org/sqlite"
 
 	"github.com/google/uuid"
@@ -301,7 +301,7 @@ func (c *StompClient) Subscribe(rawChan chan []byte, errChan chan error, mwg *sy
 		defer mwg.Done()
 		for msg := range sub.C {
 			if msg.Err != nil {
-				log.Printf("消息错误: %v", msg.Err)
+				logger.Error("消息错误: %v", msg.Err)
 				errChan <- msg.Err
 				return
 			}

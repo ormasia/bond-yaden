@@ -117,23 +117,26 @@ func main() {
 	fmt.Println("连接成功，等待消息推送...")
 	fmt.Println("按 Ctrl+C 退出")
 
-	select {
-	case err := <-errChan:
-		logger.Error("消息监听错误: %v", err)
-		go startMessageListener(errChan)
-	case <-interrupt:
-		fmt.Println("收到中断信号，正在退出...")
-		fmt.Println("正在断开连接...")
+	for {
+		select {
+		case err := <-errChan:
+			logger.Error("消息监听错误: %v", err)
+			go startMessageListener(errChan)
+		case <-interrupt:
+			fmt.Println("收到中断信号，正在退出...")
+			fmt.Println("正在断开连接...")
 
-		// 优雅关闭：关闭 channels，等待 workers 完成
-		close(RawChan)
-		close(ParsedChan)
-		close(DeadChan)
-		close(errChan)
+			// 优雅关闭：关闭 channels，等待 workers 完成
+			close(RawChan)
+			close(ParsedChan)
+			close(DeadChan)
+			close(errChan)
 
-		// 现在等待所有 worker 完成清理工作
-		wg.Wait()
-		fmt.Println("所有后台任务已停止")
+			// 现在等待所有 worker 完成清理工作
+			wg.Wait()
+			fmt.Println("所有后台任务已停止")
+			return
+		}
 	}
 }
 
