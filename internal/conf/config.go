@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	logger "wealth-bond-quote-service/pkg/log"
+
 	"github.com/spf13/viper"
 )
 
@@ -96,7 +98,7 @@ func GetAdenATSConfig() *AdenATSConfig {
 	onceAdenATS.Do(func() {
 		adenATSConfig = &AdenATSConfig{}
 		if err := GetCfg("adenATS", adenATSConfig); err != nil {
-			fmt.Printf("警告: 获取亚丁ATS配置失败: %v\n", err)
+			logger.Warn("警告: 获取亚丁ATS配置失败: %v\n", err)
 		}
 	})
 	return adenATSConfig
@@ -107,7 +109,7 @@ func GetDataProcessConfig() *DataProcessConfig {
 	onceDataProcess.Do(func() {
 		dataProcessConfig = &DataProcessConfig{}
 		if err := GetCfg("dataProcess", dataProcessConfig); err != nil {
-			fmt.Printf("警告: 获取数据处理配置失败: %v\n", err)
+			logger.Warn("警告: 获取数据处理配置失败: %v\n", err)
 		}
 	})
 	return dataProcessConfig
@@ -118,7 +120,7 @@ func GetExportConfig() *ExportConfig {
 	onceExport.Do(func() {
 		exportConfig = &ExportConfig{}
 		if err := GetCfg("export", exportConfig); err != nil {
-			fmt.Printf("警告: 获取文件导出配置失败: %v\n", err)
+			logger.Warn("警告: 获取文件导出配置失败: %v\n", err)
 		}
 	})
 	return exportConfig
@@ -129,7 +131,7 @@ func GetLogConfig() *LogCfg {
 	onceLog.Do(func() {
 		logConfig = &LogCfg{}
 		if err := GetCfg("log", logConfig); err != nil {
-			fmt.Printf("警告: 获取应用日志配置失败: %v\n", err)
+			logger.Warn("警告: 获取应用日志配置失败: %v\n", err)
 		}
 	})
 	return logConfig

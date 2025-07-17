@@ -90,17 +90,7 @@ var (
 	DeadChan   = make(chan []byte, 1000) // 解析失败
 )
 
-// 1. 用户登录获取访问令牌
-// 2. 建立WebSocket连接
-// 3. 建立STOMP协议连接
-// 4. 订阅债券行情消息
-// 5. 持续监听消息推送
 func main() {
-
-	// 获取亚丁ATS配置
-	adenConfig := config.GetAdenATSConfig()
-
-	logger.Debug("使用配置 - ATS地址: %s, 用户: %s", adenConfig.BaseURL, adenConfig.Username)
 
 	db := dataSource.GetDBConn("bond")
 
@@ -111,46 +101,8 @@ func main() {
 	// 每周创建表
 	service.NewCreateTableService(db).StartWeeklyTableCreation()
 
-	fmt.Println("开始亚丁ATS系统测试...")
-
-	// 创建STOMP客户端实例
-	client := &service.StompClient{}
-
-	// 第一步：用户登录获取访问令牌
-	// 使用加密通信协议，获取后续API调用所需的token
-	fmt.Println("第一步：登录获取Token...")
-	if err := client.Login(adenConfig.Username, adenConfig.Password, adenConfig.SmsCode, adenConfig.PublicKey, adenConfig.BaseURL, adenConfig.ClientId); err != nil {
-		// log.Fatal("登录失败:", err)
-		logger.Fatal("登录失败: %v", err.Error())
-	}
-	// fmt.Printf("登录成功，获取到Token: %s\n", client.token[:20]+"...")
-	logger.Info("登录成功，获取到Token: %s", client.Token[:20]+"...")
-
-	// 第二步：建立WebSocket连接
-	// 使用获取的token建立安全的WebSocket连接
-	fmt.Println("第二步：建立WebSocket连接...")
-	if err := client.ConnectWebSocket(adenConfig.WssURL); err != nil {
-		// log.Fatal("WebSocket连接失败:", err)
-		logger.Fatal("WebSocket连接失败: %v", err.Error())
-	}
-	defer client.Conn.Close() // 确保程序退出时关闭连接
-
-	// 第三步：建立STOMP协议连接
-	// 在WebSocket基础上建立STOMP消息协议连接
-	fmt.Println("第三步：建立STOMP连接...")
-	if err := client.ConnectStomp(); err != nil {
-		// log.Fatal("STOMP连接失败:", err)
-		logger.Fatal("STOMP连接失败: %v", err.Error())
-	}
-	defer client.StompConn.Disconnect() // 确保程序退出时断开STOMP连接
-
-	// 第四步：订阅债券行情消息
-	// 订阅指定的消息队列，开始接收实时行情数据
-	fmt.Println("第四步：订阅行情消息...")
-	// log.Fatal("订阅失败:", err)
-	if err := client.Subscribe(RawChan); err != nil {
-		logger.Fatal("订阅失败: %v", err.Error())
-	}
+	errChan := make(chan error, 1)
+	go startMessageListener(errChan)
 
 	// 第五步：启动后台处理工作协程
 	bqs := service.NewBondQuoteService(db, &wg, RawChan, ParsedChan, DeadChan)
@@ -165,16 +117,72 @@ func main() {
 	fmt.Println("连接成功，等待消息推送...")
 	fmt.Println("按 Ctrl+C 退出")
 
-	// 阻塞等待中断信号
-	<-interrupt
-	fmt.Println("正在断开连接...")
+	select {
+	case err := <-errChan:
+		logger.Error("消息监听错误: %v", err)
+		go startMessageListener(errChan)
+	case <-interrupt:
+		fmt.Println("收到中断信号，正在退出...")
+		fmt.Println("正在断开连接...")
 
-	// 优雅关闭：关闭 channels，等待 workers 完成
-	close(RawChan)
-	close(ParsedChan)
-	close(DeadChan)
+		// 优雅关闭：关闭 channels，等待 workers 完成
+		close(RawChan)
+		close(ParsedChan)
+		close(DeadChan)
+		close(errChan)
 
-	// 现在等待所有 worker 完成清理工作
-	wg.Wait()
-	fmt.Println("所有后台任务已停止")
+		// 现在等待所有 worker 完成清理工作
+		wg.Wait()
+		fmt.Println("所有后台任务已停止")
+	}
+}
+
+// 1. 用户登录获取访问令牌
+// 2. 建立WebSocket连接
+// 3. 建立STOMP协议连接
+// 4. 订阅债券行情消息
+// 5. 持续监听消息推送
+func startMessageListener(errChan chan error) {
+	var Mwg sync.WaitGroup
+	// 获取亚丁ATS配置
+	adenConfig := config.GetAdenATSConfig()
+
+	logger.Debug("使用配置 - ATS地址: %s, 用户: %s", adenConfig.BaseURL, adenConfig.Username)
+
+	fmt.Println("开始亚丁ATS系统测试...")
+
+	// 创建STOMP客户端实例
+	client := &service.StompClient{}
+
+	// 第一步：用户登录获取访问令牌
+	// 使用加密通信协议，获取后续API调用所需的token
+	fmt.Println("第一步：登录获取Token...")
+	if err := client.Login(adenConfig.Username, adenConfig.Password, adenConfig.SmsCode, adenConfig.PublicKey, adenConfig.BaseURL, adenConfig.ClientId); err != nil {
+		logger.Fatal("登录失败: %v", err.Error())
+	}
+	logger.Info("登录成功，获取到Token: %s", client.Token[:20]+"...")
+
+	// 第二步：建立WebSocket连接
+	// 使用获取的token建立安全的WebSocket连接
+	fmt.Println("第二步：建立WebSocket连接...")
+	if err := client.ConnectWebSocket(adenConfig.WssURL); err != nil {
+		logger.Fatal("WebSocket连接失败: %v", err.Error())
+	}
+	defer client.Conn.Close() // 确保程序退出时关闭连接
+
+	// 第三步：建立STOMP协议连接
+	// 在WebSocket基础上建立STOMP消息协议连接
+	fmt.Println("第三步：建立STOMP连接...")
+	if err := client.ConnectStomp(); err != nil {
+		logger.Fatal("STOMP连接失败: %v", err.Error())
+	}
+	defer client.StompConn.Disconnect() // 确保程序退出时断开STOMP连接
+
+	// 第四步：订阅债券行情消息
+	// 订阅指定的消息队列，开始接收实时行情数据
+	fmt.Println("第四步：订阅行情消息...")
+	if err := client.Subscribe(RawChan, errChan, &Mwg); err != nil {
+		logger.Fatal("订阅失败: %v", err.Error())
+	}
+	Mwg.Wait()
 }

@@ -26,6 +26,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 	utils "wealth-bond-quote-service/pkg/crypto_utils"
 
@@ -264,7 +265,7 @@ func (c *StompClient) ConnectStomp() error {
 }
 
 // 订阅消息
-func (c *StompClient) Subscribe(rawChan chan []byte) error {
+func (c *StompClient) Subscribe(rawChan chan []byte, errChan chan error, mwg *sync.WaitGroup) error {
 	// 订阅目标地址：债券行情消息队列
 	// /user/queue/v1/apiatsbondquote/messages
 	// - /user: 用户专用队列前缀
@@ -294,13 +295,14 @@ func (c *StompClient) Subscribe(rawChan chan []byte) error {
 
 	fmt.Println("订阅成功，开始监听消息...")
 
+	mwg.Add(1)
 	// 启动消息监听协程
 	go func() {
+		defer mwg.Done()
 		for msg := range sub.C {
 			if msg.Err != nil {
 				log.Printf("消息错误: %v", msg.Err)
-				// 在这里可以处理心跳超时
-				// 重新登录和订阅
+				errChan <- msg.Err
 				return
 			}
 
