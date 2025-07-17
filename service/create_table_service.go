@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
-	"log"
 	"time"
 	"wealth-bond-quote-service/model"
+
+	logger "wealth-bond-quote-service/pkg/log"
 
 	"gorm.io/gorm"
 )
@@ -42,7 +43,7 @@ func (s *createTableService) CreateTables(date time.Time) error {
 			}
 		}
 
-		log.Printf("成功创建表: %s, %s", detailTable, latestTable)
+		logger.Info("成功创建表: %s, %s", detailTable, latestTable)
 	}
 
 	return nil
@@ -50,11 +51,11 @@ func (s *createTableService) CreateTables(date time.Time) error {
 
 // 启动每周创建表的定时任务
 func (s *createTableService) StartWeeklyTableCreation() {
-	log.Println("启动每周建表服务...")
+	logger.Info("启动每周建表服务...")
 
 	// 立即为本周创建表
 	if err := s.CreateTables(time.Now()); err != nil {
-		log.Printf("为本周创建表失败: %v", err)
+		logger.Error("为本周创建表失败: %v", err)
 	}
 
 	// 启动定时任务
@@ -70,14 +71,14 @@ func (s *createTableService) StartWeeklyTableCreation() {
 
 			// 等待到下周一
 			waitDuration := nextMonday.Sub(now)
-			log.Printf("下次建表将在 %s 后执行 (下周一: %s)", waitDuration, nextMonday.Format("2006-01-02"))
+			logger.Info("下次建表将在 %s 后执行 (下周一: %s)", waitDuration, nextMonday.Format("2006-01-02"))
 			time.Sleep(waitDuration)
 
 			// 为下一周创建表
 			if err := s.CreateTables(nextMonday); err != nil {
-				log.Printf("为下周创建表失败: %v", err)
+				logger.Error("为下周创建表失败: %v", err)
 			} else {
-				log.Printf("成功为下周创建表 (周开始日期: %s)", nextMonday.Format("2006-01-02"))
+				logger.Info("成功为下周创建表 (周开始日期: %s)", nextMonday.Format("2006-01-02"))
 			}
 		}
 	}()
@@ -123,6 +124,6 @@ func (s *createTableService) EnsureDailyTablesExist(date time.Time) error {
 		}
 	}
 
-	log.Printf("成功创建表: %s, %s", detailTable, latestTable)
+	logger.Info("成功创建表: %s, %s", detailTable, latestTable)
 	return nil
 }

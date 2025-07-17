@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"wealth-bond-quote-service/model"
+	logger "wealth-bond-quote-service/pkg/log"
 )
 
 var (
@@ -155,7 +155,7 @@ func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushD
 					return
 				}
 				if err := InsertBatch(bqs.db, batch); err != nil {
-					log.Printf("批量写库失败: %v", err)
+					logger.Error("批量写库失败: %v", err)
 				}
 				batch = batch[:0]
 			}

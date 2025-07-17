@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+
 	"os"
 	"path/filepath"
 	"time"
+	logger "wealth-bond-quote-service/pkg/log"
 
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
@@ -33,7 +34,7 @@ func NewExportLatestQuotesService(db *gorm.DB) *ExportLatestQuotesService {
 func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string, interval int) {
 	// 确保导出目录存在
 	if err := os.MkdirAll(exportDir, 0755); err != nil {
-		log.Fatalf("创建导出目录失败: %v", err)
+		logger.Fatal("创建导出目录失败: %v", err)
 	}
 
 	// // 计算下一个整点时间
@@ -44,7 +45,7 @@ func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string, interval
 	// log.Printf("债券最新行情导出服务已启动，将在 %s 后开始首次导出", initialDelay)
 
 	intervalDuration := time.Duration(interval) * time.Minute
-	log.Printf("债券最新行情导出服务已启动，每 %d 分钟执行一次导出", interval)
+	logger.Info("债券最新行情导出服务已启动，每 %d 分钟执行一次导出", interval)
 	// 启动定时任务
 	go func(intervalDuration time.Duration) {
 		// 等待到下一个整点
@@ -59,9 +60,9 @@ func (s *ExportLatestQuotesService) StartHourlyExport(exportDir string, interval
 			filename := filepath.Join(exportDir, fmt.Sprintf("bond_latest_quotes_%s.xlsx", exportTime.Format("20060102_150405")))
 
 			if err := s.ExportToExcel(filename); err != nil {
-				log.Printf("导出Excel失败: %v", err)
+				logger.Error("导出Excel失败: %v", err)
 			} else {
-				log.Printf("成功导出Excel文件: %s", filename)
+				logger.Info("成功导出Excel文件: %s", filename)
 			}
 
 			<-ticker.C // 等待下一个小时
@@ -111,14 +112,14 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 		// 解析JSON数据
 		var msg BondQuoteMessage
 		if err := json.Unmarshal([]byte(quote.RawJSON), &msg); err != nil {
-			log.Printf("解析JSON失败 (ISIN=%s): %v", quote.ISIN, err)
+			logger.Error("解析JSON失败 (ISIN=%s): %v", quote.ISIN, err)
 			continue
 		}
 
 		// 解析内部报价数据
 		var payload QuotePriceData
 		if err := json.Unmarshal([]byte(msg.Data.QuotePriceData), &payload); err != nil {
-			log.Printf("解析报价数据失败 (ISIN=%s): %v", quote.ISIN, err)
+			logger.Error("解析报价数据失败 (ISIN=%s): %v", quote.ISIN, err)
 			continue
 		}
 
@@ -234,6 +235,6 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 	if err := os.Remove(filename); err != nil {
 		return fmt.Errorf("删除本地文件失败: %w", err)
 	}
-	log.Printf("成功删除本地文件: %s", filename)
+	logger.Info("成功删除本地文件: %s", filename)
 	return nil
 }
