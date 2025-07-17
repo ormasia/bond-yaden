@@ -17,6 +17,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"sync"
@@ -87,6 +89,11 @@ func init() {
 var ()
 
 func main() {
+
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
+
 	var wg sync.WaitGroup
 	RawChan := make(chan []byte, rawCap)
 	ParsedChan := make(chan *service.ParsedQuote, parsedCap)
