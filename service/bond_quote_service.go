@@ -140,14 +140,39 @@ func (bqs *BondQuoteService) StartParseWorkers(workerNum int) {
 
 // StartDBWorkers — 写库层
 func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushDelay time.Duration) {
-	// 提前关掉自动事务和预编译
 	bqs.db = bqs.db.Session(&gorm.Session{SkipDefaultTransaction: true, PrepareStmt: true})
 
+	// 为每个 worker 创建独立的数据分区
+	workerChans := make([]chan *ParsedQuote, workerNum)
+	for i := 0; i < workerNum; i++ {
+		workerChans[i] = make(chan *ParsedQuote, batchSize)
+	}
+
+	// 启动分发器，按 ISIN 哈希分配到不同 worker
+	bqs.wg.Add(1)
+	go func() {
+		defer bqs.wg.Done()
+		defer func() {
+			for _, ch := range workerChans {
+				close(ch)
+			}
+		}()
+
+		for pq := range bqs.ParsedChan {
+			// 按 ISIN 哈希分配到特定 worker
+			workerIndex := hash(pq.Payload.SecurityID) % workerNum
+			workerChans[workerIndex] <- pq
+		}
+	}()
+
+	// 启动 DB workers
 	for i := 0; i < workerNum; i++ {
 		bqs.wg.Add(1)
-		go func() {
+		go func(workerChan chan *ParsedQuote) {
 			defer bqs.wg.Done()
 			ticker := time.NewTicker(flushDelay)
+			defer ticker.Stop()
+
 			batch := make([]*ParsedQuote, 0, batchSize)
 
 			flush := func() {
@@ -162,8 +187,8 @@ func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushD
 
 			for {
 				select {
-				case pq, ok := <-bqs.ParsedChan:
-					if !ok { // channel 关闭，写最后一批
+				case pq, ok := <-workerChan:
+					if !ok {
 						flush()
 						return
 					}
@@ -175,7 +200,7 @@ func (bqs *BondQuoteService) StartDBWorkers(workerNum int, batchSize int, flushD
 					flush()
 				}
 			}
-		}()
+		}(workerChans[i])
 	}
 }
 
@@ -297,4 +322,16 @@ func InsertBatch(db *gorm.DB, batch []*ParsedQuote) error {
 		}
 		return nil
 	})
+}
+
+// 简单哈希函数
+func hash(s string) int {
+	h := 0
+	for _, c := range s {
+		h = h*31 + int(c)
+	}
+	if h < 0 {
+		h = -h
+	}
+	return h
 }

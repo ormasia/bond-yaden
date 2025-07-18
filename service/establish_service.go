@@ -336,10 +336,6 @@ func (c *StompClient) Subscribe(ctx context.Context, rawChan chan []byte, errCha
 			fmt.Print("==================================\n")
 		}
 	}
-
-	// }()
-
-	// return nil
 }
 
 // WebSocketNetConn WebSocket网络连接适配器
