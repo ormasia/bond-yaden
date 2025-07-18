@@ -100,9 +100,9 @@ func main() {
 	DeadChan := make(chan []byte, 1000) // 解析失败
 	db := dataSource.GetDBConn("bond")
 
-	// 模拟test
-	rawjson := []byte(`{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}`)
-	RawChan <- rawjson
+	// // 模拟test
+	// rawjson := []byte(`{"data":{"data":"{\"askPrices\":[],\"bidPrices\":[{\"brokerId\":\"1941007160979324928\",\"isTbd\":\"N\",\"isValid\":\"Y\",\"minTransQuantity\":6000000,\"orderQty\":13000000,\"price\":99.519735,\"quoteOrderNo\":\"D1KNES1XUNB003EKWSX0\",\"quoteTime\":1751607142490,\"securityId\":\"HK0000098928\",\"settleType\":\"T2\",\"side\":\"BID\",\"yield\":4.517865}],\"securityId\":\"HK0000098928\"}","messageId":"D1KNES1XUNB003EKWSX0","messageType":"BOND_ORDER_BOOK_MSG","organization":"AF","receiverId":"HK0000098928","timestamp":1751607144048},"sendTime":1751607144053,"wsMessageType":"ATS_QUOTE"}`)
+	// RawChan <- rawjson
 
 	exportConfig := config.GetExportConfig()
 	// 每小时导出最新行情数据
