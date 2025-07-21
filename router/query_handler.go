@@ -1,6 +1,8 @@
 package router
 
 import (
+	"context"
+	"time"
 	"wealth-bond-quote-service/service"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,37 +24,16 @@ func NewQueryHandler(queryService *service.BondQueryService) *QueryHandler {
 func (h *QueryHandler) RegisterRoutes(app *fiber.App) {
 	queryGroup := app.Group("/v1/api/bond/query")
 
-	// 导出当前最新行情
-	queryGroup.Get("/current-latest", h.ExportCurrentLatestQuotes)
+	// 健康检查接口
+	queryGroup.Get("/ping", h.Ping)
 	// 导出日终数据
-	queryGroup.Get("/daily-end", h.ExportDailyEndData)
-	// 导出时间段数据
-	queryGroup.Get("/time-range", h.ExportTimeRangeData)
+	queryGroup.Get("/daily", h.ExportDailyData)
+	// 导出历史数据
+	queryGroup.Get("/history", h.ExportHistoryData)
 }
 
-// ExportCurrentLatestQuotes 导出当前最新行情
-func (h *QueryHandler) ExportCurrentLatestQuotes(c *fiber.Ctx) error {
-	// 导出数据
-	filename, err := h.queryService.ExportCurrentLatestQuotes()
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"code": 500,
-			"msg":  "导出失败: " + err.Error(),
-		})
-	}
-
-	// 返回文件路径
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"code": 200,
-		"msg":  "导出成功",
-		"data": fiber.Map{
-			"filename": filename,
-		},
-	})
-}
-
-// ExportDailyEndData 导出日终数据
-func (h *QueryHandler) ExportDailyEndData(c *fiber.Ctx) error {
+// ExportDailyData 导出日终数据
+func (h *QueryHandler) ExportDailyData(c *fiber.Ctx) error {
 	var param service.DateRangeParam
 	if err := c.QueryParser(&param); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -69,8 +50,12 @@ func (h *QueryHandler) ExportDailyEndData(c *fiber.Ctx) error {
 		})
 	}
 
+	// 创建超时上下文
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+
 	// 导出数据
-	filename, err := h.queryService.ExportDailyEndData(param)
+	result, err := h.queryService.ExportDailyData(ctx, param)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"code": 500,
@@ -78,18 +63,16 @@ func (h *QueryHandler) ExportDailyEndData(c *fiber.Ctx) error {
 		})
 	}
 
-	// 返回文件路径
+	// 返回下载链接
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"code": 200,
 		"msg":  "导出成功",
-		"data": fiber.Map{
-			"filename": filename,
-		},
+		"data": result,
 	})
 }
 
-// ExportTimeRangeData 导出时间段数据
-func (h *QueryHandler) ExportTimeRangeData(c *fiber.Ctx) error {
+// ExportHistoryData 导出历史数据
+func (h *QueryHandler) ExportHistoryData(c *fiber.Ctx) error {
 	var param service.TimeRangeParam
 	if err := c.QueryParser(&param); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -99,15 +82,19 @@ func (h *QueryHandler) ExportTimeRangeData(c *fiber.Ctx) error {
 	}
 
 	// 参数验证
-	if param.Date == "" || param.StartTime == "" || param.EndTime == "" {
+	if param.StartDate == "" || param.EndDate == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"code": 400,
-			"msg":  "日期、开始时间和结束时间不能为空",
+			"msg":  "开始日期和结束日期不能为空",
 		})
 	}
 
+	// 创建超时上下文
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
 	// 导出数据
-	filename, err := h.queryService.ExportTimeRangeData(param)
+	result, err := h.queryService.ExportHistoryData(ctx, param)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"code": 500,
@@ -115,12 +102,24 @@ func (h *QueryHandler) ExportTimeRangeData(c *fiber.Ctx) error {
 		})
 	}
 
-	// 返回文件路径
+	// 返回下载链接
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"code": 200,
 		"msg":  "导出成功",
+		"data": result,
+	})
+}
+
+// Ping 健康检查接口
+func (h *QueryHandler) Ping(c *fiber.Ctx) error {
+	// 返回成功响应
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"code": 200,
+		"msg":  "健康检查成功",
 		"data": fiber.Map{
-			"filename": filename,
+			"service": "wealth-bond-quote-service",
+			"status":  "running",
+			"time":    time.Now().Format("2006-01-02 15:04:05"),
 		},
 	})
 }

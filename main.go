@@ -28,8 +28,11 @@ import (
 	config "wealth-bond-quote-service/internal/conf"
 	"wealth-bond-quote-service/internal/dataSource"
 	logger "wealth-bond-quote-service/pkg/log"
+	"wealth-bond-quote-service/router"
 	"wealth-bond-quote-service/service"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	_ "modernc.org/sqlite"
 )
 
@@ -219,7 +222,29 @@ func main() {
 	DeadChan := make(chan []byte, 1000) // 解析失败
 	db := dataSource.GetDBConn("bond")
 
-	go GenerateAndSendToChannel(RawChan, 25)
+	// 启动 Fiber HTTP 服务器
+	app := fiber.New(fiber.Config{
+		ServerHeader: "wealth-bond-quote-service",
+		AppName:      "Wealth Bond Quote Service v1.0.0",
+	})
+
+	// 添加中间件
+	app.Use(cors.New())
+
+	// 注册路由
+	queryService := service.NewBondQueryService(db)
+	queryHandler := router.NewQueryHandler(queryService)
+	queryHandler.RegisterRoutes(app)
+
+	// 在后台启动 HTTP 服务器
+	go func() {
+		fmt.Println("启动 HTTP 服务器在端口 :8080...")
+		if err := app.Listen(":8080"); err != nil {
+			logger.Error("HTTP 服务器启动失败: %v", err)
+		}
+	}()
+
+	// go GenerateAndSendToChannel(RawChan, 25)
 
 	exportConfig := config.GetExportConfig()
 	// 每小时导出最新行情数据
@@ -258,6 +283,13 @@ func main() {
 			fmt.Println("收到中断信号，正在退出...")
 			fmt.Println("正在断开连接...")
 			cancel() // 取消上下文，通知所有协程退出
+
+			// 优雅关闭 HTTP 服务器
+			fmt.Println("正在关闭 HTTP 服务器...")
+			if err := app.Shutdown(); err != nil {
+				logger.Error("HTTP 服务器关闭失败: %v", err)
+			}
+
 			// 优雅关闭：关闭 channels，等待 workers 完成
 			close(RawChan)
 			close(ParsedChan)
@@ -320,7 +352,7 @@ func startMessageListener(ctx context.Context, errChan chan error, rawChan chan 
 	// 第四步：订阅债券行情消息
 	// 订阅指定的消息队列，开始接收实时行情数据
 	fmt.Println("第四步：订阅行情消息...")
-	if err := client.Subscribe(ctx, rawChan, errChan /*, &Mwg*/); err != nil {
+	if err := client.Subscribe(ctx, rawChan, errChan); err != nil {
 		logger.Fatal("订阅失败: %v", err.Error())
 		return
 	}

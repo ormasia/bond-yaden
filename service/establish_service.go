@@ -59,13 +59,6 @@ type EncryptedRequest struct {
 	ClientId string `json:"clientId"` // 客户端标识符，用于区分不同客户端
 }
 
-// // EncryptedNoLoginRequest 无需登录的加密请求结构体
-// type EncryptedNoLoginRequest struct {
-// 	ReqMsg   string `json:"reqMsg"`   // AES加密后的请求内容（Base64编码）
-// 	ReqKey   string `json:"reqKey"`   // RSA加密后的AES密钥（Base64编码）
-// 	ClientId string `json:"clientId"` // 客户端标识符
-// }
-
 // EncryptedResponse 服务器返回的加密响应格式
 type EncryptedResponse struct {
 	ResMsg string `json:"resMsg"` // AES加密后的响应内容（Base64编码）
@@ -126,7 +119,7 @@ func (c *StompClient) Login(username, password, smsCode, publicKey, baseURL, cli
 		},
 	}
 
-	resp, err := client.Post(LOGIN_URL, "application/json", bytes.NewBuffer(reqBody)) //
+	resp, err := client.Post(LOGIN_URL, "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return fmt.Errorf("HTTP请求失败: %v", err)
 	}
@@ -137,9 +130,6 @@ func (c *StompClient) Login(username, password, smsCode, publicKey, baseURL, cli
 	if err != nil {
 		return fmt.Errorf("读取响应失败: %v", err)
 	}
-
-	fmt.Printf("响应状态: %s\n", resp.Status)
-	fmt.Printf("响应内容: %s\n", string(respBody))
 
 	var encryptedResp EncryptedResponse
 	json.Unmarshal(respBody, &encryptedResp)
@@ -265,7 +255,7 @@ func (c *StompClient) ConnectStomp() error {
 }
 
 // 订阅消息
-func (c *StompClient) Subscribe(ctx context.Context, rawChan chan []byte, errChan chan error /*, mwg *sync.WaitGroup*/) error {
+func (c *StompClient) Subscribe(ctx context.Context, rawChan chan []byte, errChan chan error) error {
 	// 订阅目标地址：债券行情消息队列
 	// /user/queue/v1/apiatsbondquote/messages
 	// - /user: 用户专用队列前缀
@@ -295,10 +285,6 @@ func (c *StompClient) Subscribe(ctx context.Context, rawChan chan []byte, errCha
 
 	fmt.Println("订阅成功，开始监听消息...")
 
-	// mwg.Add(1)
-	// // 启动消息监听协程
-	// go func() {
-	// 	defer mwg.Done()
 	for {
 		select {
 		case <-ctx.Done():
@@ -316,24 +302,16 @@ func (c *StompClient) Subscribe(ctx context.Context, rawChan chan []byte, errCha
 			if len(msg.Body) != 0 {
 				rawChan <- msg.Body
 			}
-			// 打印收到的新消息
-			fmt.Println("\n========== 收到新消息 ==========")
-			fmt.Printf("时间: %s\n", time.Now().Format("2006-01-02 15:04:05"))
-			fmt.Printf("目的地: %s\n", msg.Destination)
-			fmt.Printf("内容类型: %s\n", msg.ContentType)
-			fmt.Printf("消息ID: %s\n", msg.Header.Get("message-id"))
-			fmt.Printf("订阅ID: %s\n", msg.Header.Get("subscription"))
-			fmt.Println("消息内容:")
 
-			// 尝试格式化JSON输出
-			var jsonData any
-			if err := json.Unmarshal(msg.Body, &jsonData); err == nil {
-				formattedJSON, _ := json.MarshalIndent(jsonData, "", "  ")
-				fmt.Println(string(formattedJSON))
-			} else {
-				fmt.Println(string(msg.Body))
-			}
-			fmt.Print("==================================\n")
+			// // 尝试格式化JSON输出
+			// var jsonData any
+			// if err := json.Unmarshal(msg.Body, &jsonData); err == nil {
+			// 	formattedJSON, _ := json.MarshalIndent(jsonData, "", "  ")
+			// 	fmt.Println(string(formattedJSON))
+			// } else {
+			// 	fmt.Println(string(msg.Body))
+			// }
+			// fmt.Print("==================================\n")
 		}
 	}
 }
@@ -359,12 +337,15 @@ func NewWebSocketNetConn(conn *websocket.Conn) *WebSocketNetConn {
 func (w *WebSocketNetConn) Read(p []byte) (n int, err error) {
 	// 读取WebSocket消息（忽略消息类型）
 	_, message, err := w.conn.ReadMessage()
-	if err == nil && len(message) > 0 {
-		fmt.Printf("[%s] ", time.Now().Format("15:04:05.000"))
-		fmt.Println("收到STOMP帧:")
-		fmt.Println(string(message))
-		fmt.Println("----------------------------")
+	if err != nil {
+		return 0, err
 	}
+	// if err == nil && len(message) > 0 {
+	// 	fmt.Printf("[%s] ", time.Now().Format("15:04:05.000"))
+	// 	fmt.Println("收到STOMP帧:")
+	// 	fmt.Println(string(message))
+	// 	fmt.Println("----------------------------")
+	// }
 	// 将消息内容复制到缓冲区
 	copy(p, message)
 	return len(message), nil
@@ -373,12 +354,12 @@ func (w *WebSocketNetConn) Read(p []byte) (n int, err error) {
 // Write 实现net.Conn接口的Write方法
 // 向WebSocket连接写入数据
 func (w *WebSocketNetConn) Write(p []byte) (n int, err error) {
-	if len(p) > 0 {
-		fmt.Printf("[%s] ", time.Now().Format("15:04:05.000"))
-		fmt.Println("发送STOMP帧:")
-		fmt.Println(string(p))
-		fmt.Println("----------------------------")
-	}
+	// if len(p) > 0 {
+	// 	fmt.Printf("[%s] ", time.Now().Format("15:04:05.000"))
+	// 	fmt.Println("发送STOMP帧:")
+	// 	fmt.Println(string(p))
+	// 	fmt.Println("----------------------------")
+	// }
 	// 发送文本消息到WebSocket
 	err = w.conn.WriteMessage(websocket.TextMessage, p)
 	if err != nil {
