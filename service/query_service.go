@@ -10,45 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// // 响应消息结构体
-// type BondQuoteMessage struct {
-// 	Data          BondQuoteData `json:"data"`
-// 	SendTime      int64         `json:"sendTime"`
-// 	WsMessageType string        `json:"wsMessageType"`
-// }
-
-// type BondQuoteData struct {
-// 	QuotePriceData string `json:"data"` // 内部JSON字符串
-// 	MessageID      string `json:"messageId"`
-// 	MessageType    string `json:"messageType"`
-// 	Organization   string `json:"organization"`
-// 	ReceiverID     string `json:"receiverId"`
-// 	Timestamp      int64  `json:"timestamp"`
-// }
-
-// // 报价数据结构体 - 用于解析内部JSON字符串
-// type QuotePriceData struct {
-// 	AskPrices  []QuotePrice `json:"askPrices"`
-// 	BidPrices  []QuotePrice `json:"bidPrices"`
-// 	SecurityID string       `json:"securityId"`
-// }
-
-// // 报价结构体
-// type QuotePrice struct {
-// 	BrokerID         string  `json:"brokerId"`
-// 	IsTbd            string  `json:"isTbd"`
-// 	IsValid          string  `json:"isValid"`
-// 	MinTransQuantity float64 `json:"minTransQuantity"`
-// 	OrderQty         float64 `json:"orderQty"`
-// 	Price            float64 `json:"price"`
-// 	QuoteOrderNo     string  `json:"quoteOrderNo"`
-// 	QuoteTime        int64   `json:"quoteTime"`
-// 	SecurityID       string  `json:"securityId"`
-// 	SettleType       string  `json:"settleType"`
-// 	Side             string  `json:"side"`
-// 	Yield            float64 `json:"yield"`
-// }
-
 // BondQueryService 债券行情查询服务
 type BondQueryService struct {
 	db *gorm.DB

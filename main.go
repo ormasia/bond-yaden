@@ -228,7 +228,8 @@ func main() {
 	// 每周创建表
 	service.NewCreateTableService(db).StartWeeklyTableCreation()
 
-	errChan := make(chan error, 1)
+	// 建立STOMP连接并订阅消息
+	errChan := make(chan error, 1) // 监听出现错误通道
 	ctx, cancel := context.WithCancel(context.Background())
 	go startMessageListener(ctx, errChan, RawChan, &wg)
 
