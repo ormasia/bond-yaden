@@ -56,7 +56,7 @@ type LoginResponse struct {
 type EncryptedRequest struct {
 	ReqMsg   string `json:"reqMsg"`   // AES加密后的请求内容（Base64编码）
 	ReqKey   string `json:"reqKey"`   // RSA加密后的AES密钥（Base64编码）
-	ClientId string `json:"clientId"` // 客户端标识符，用于区分不同客户端
+	ClientId string `json:"clientId"` // 客户端标识符
 }
 
 // EncryptedResponse 服务器返回的加密响应格式
@@ -205,7 +205,6 @@ func (c *StompClient) ConnectWebSocket(wssURL string) error {
 
 	// 建立连接
 	conn, resp, err := dialer.Dial(u.String(), headers)
-	// conn, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		if resp != nil {
 			fmt.Printf("HTTP响应状态: %s\n", resp.Status)

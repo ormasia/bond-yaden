@@ -174,7 +174,6 @@ func generateTestMessage(index int, securityIDs, brokerIDs []string) []byte {
 	return jsonData
 }
 
-// 如果你想直接在代码中使用，可以调用这个函数
 func GenerateAndSendToChannel(rawChan chan []byte, count int) {
 	securityIDs := []string{
 		"HK0000098928", "HK0000098929", "HK0000098930", "HK0000098931", "HK0000098932",
