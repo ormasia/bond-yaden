@@ -113,7 +113,7 @@ func (c *StompClient) Login(username, password, smsCode, publicKey, baseURL, cli
 	client := &http.Client{
 		Timeout: 30 * time.Second, // 请求超时时间30秒
 		Transport: &http.Transport{
-			// TLS配置：跳过证书验证（仅用于测试环境）
+			// TLS配置：跳过证书验证
 			// 生产环境应该移除InsecureSkipVerify或设置为false
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
@@ -152,7 +152,7 @@ func (c *StompClient) Login(username, password, smsCode, publicKey, baseURL, cli
 	if err != nil {
 		return fmt.Errorf("AES解密响应失败: %v", err)
 	}
-	fmt.Printf("响应状态:%s", decryptedResp)
+	fmt.Printf("响应状态:%s\n", decryptedResp)
 
 	// 解析响应
 	var loginResp LoginResponse

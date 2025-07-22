@@ -202,7 +202,7 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 		return fmt.Errorf("保存Excel文件失败: %w", err)
 	}
 
-	// 这里需要使用 OSS 上传文件，拿到 ossid 和 url，拼接成可以直接下载的url
+	// 这里需要使用 OSS 上传文件，拿到 ossid 和 下载url
 	ossConfig := config.GetExportConfig()
 	ossInfo := oss.OssInfo{
 		Url:     ossConfig.URL,

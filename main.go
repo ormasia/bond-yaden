@@ -244,7 +244,8 @@ func main() {
 		}
 	}()
 
-	// go GenerateAndSendToChannel(RawChan, 25)
+	// 模拟消息发送到通道中
+	go GenerateAndSendToChannel(RawChan, 25)
 
 	exportConfig := config.GetExportConfig()
 	// 每小时导出最新行情数据
