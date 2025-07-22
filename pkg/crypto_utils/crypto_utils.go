@@ -247,11 +247,5 @@ func EncryptRequest(content string, publicKey, clientID string) (string, string,
 		return "", "", fmt.Errorf("RSA加密失败: %v", err)
 	}
 
-	// 第四步：组装加密请求结构
-	// return &EncryptedRequest{
-	// 	ReqMsg:   reqMsg,   // AES加密后的请求内容
-	// 	ReqKey:   reqKey,   // RSA加密后的AES密钥
-	// 	ClientId: clientID, // 客户端标识符
-	// }, nil
 	return reqMsg, reqKey, nil
 }

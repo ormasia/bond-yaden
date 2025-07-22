@@ -108,7 +108,7 @@ func UploadFile(filePath, fileName, md5 string, headers map[string]string, ossIn
 	if err := json.Unmarshal(responseBody, &jsonresp); err != nil {
 		return "", "", fmt.Errorf("响应解析失败: %w, 内容: %s", err, string(responseBody))
 	}
-	fmt.Printf("OSS响应: %+v\n", jsonresp)
+
 	// 检查响应状态
 	if jsonresp.Error != nil {
 		return "", "", fmt.Errorf("上传失败: %s, 错误码: %d", jsonresp.Error.Message, jsonresp.Error.Code)

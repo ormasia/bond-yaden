@@ -221,7 +221,7 @@ func (s *ExportLatestQuotesService) ExportToExcel(filename string) error {
 
 	// 然后调用钉钉发送消息的服务，不用拼接url直接是可以下载的连接，把这个url用钉钉发送一下就行
 	// 发送钉钉消息
-	fmt.Print("发送钉钉消息: ", url)
+	fmt.Print("发送钉钉消息: \n", url)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	message := fmt.Sprintf("%s下载链接: \n%s", time.Now().Format("2006-01-02 15:04:05"), url)
